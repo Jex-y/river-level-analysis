@@ -14,11 +14,9 @@
 			"installTools": true,
 			"installJupyterlab": true,
 			"version": "3.11"
-		}
+		},
+		"ghcr.io/devcontainers/features/github-cli:1": {}
 	}
-
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
