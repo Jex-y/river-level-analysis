@@ -140,7 +140,10 @@ const getMainChartOptions = () => {
 	};
 };
 
+console.info('Fetching data…');
+
 if (document.getElementById('main-chart')) {
+	console.info('Rendering main chart…');
 	const mainChart = new ApexCharts(
 		document.getElementById('main-chart'),
 		getMainChartOptions(),

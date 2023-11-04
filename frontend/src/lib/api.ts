@@ -1,4 +1,4 @@
-import { DataPoint, DataPointQuality } from '@/types/entities';
+import { DataPoint } from '@/types/entities';
 
 export async function fetchData() {
 	let datapoints: DataPoint[] = [];
@@ -6,7 +6,6 @@ export async function fetchData() {
 	const NUM_POINTS = 100;
 	for (let i = 0; i < NUM_POINTS; i++) {
 		datapoints.push({
-			quality: DataPointQuality.MEASURED,
 			timestamp: i,
 			value: last + (Math.random() - 0.5) * 10,
 		});

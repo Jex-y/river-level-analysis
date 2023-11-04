@@ -29,13 +29,13 @@ export interface User {
 
 export type PlaygroundAction = (typeof playgroundActions)[number];
 
-export enum DataPointQuality {
-	PREDICTED = 'predicted',
-	MEASURED = 'measured',
-}
-
 export interface DataPoint {
 	timestamp: number;
-	quality: DataPointQuality;
 	value: number;
+}
+
+export interface ApiResult {
+	historical: DataPoint[];
+	predictions: DataPoint[];
+	trend: 'up' | 'down' | 'flat';
 }
