@@ -2,6 +2,7 @@
 /* eslint max-lines: 'off' */
 
 import { asset } from '../lib/data';
+import Graph from '../components/Graph.astro';
 ---
 
 <div class="px-4 pt-6">
@@ -37,9 +38,7 @@ import { asset } from '../lib/data';
 					</svg>
 				</div>
 			</div>
-
-			<!-- NOTE: Charts could be extracted to a generic UI component -->
-			<div id="main-chart"></div>
+			<Graph />
 
 			<!-- Card Footer -->
 			<div
