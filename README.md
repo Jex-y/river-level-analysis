@@ -2,12 +2,12 @@
 https://dpds.weatheronline.co.uk/historical_data/weather_stations_download/#forward  #link for spenny weather data
 
 
-Chat GPT code for neural network in pytorch w 7448 inputs (49x4x38):
+# Chat GPT code for neural network in pytorch w 7448 inputs (49x4x38):
 
 import torch
 import torch.nn as nn
 
-# Define a custom neural network class
+#Define a custom neural network class
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super(NeuralNetwork, self).__init()
@@ -23,8 +23,8 @@ class NeuralNetwork(nn.Module):
         x = self.output_layer(x)
         return x
 
-# Create an instance of the neural network
+#Create an instance of the neural network
 model = NeuralNetwork()
 
-# Print the model architecture
+#Print the model architecture
 print(model)
