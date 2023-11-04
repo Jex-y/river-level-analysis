@@ -39,3 +39,15 @@ export interface ApiResult {
 	predictions: DataPoint[];
 	trend: 'up' | 'down' | 'flat';
 }
+
+export enum GoNoGo {
+	Go,
+	Warning,
+	Nogo,
+}
+export interface Measurement {
+	name: string;
+	value: number;
+	GoNoGo: GoNoGo;
+	units: string;
+}
