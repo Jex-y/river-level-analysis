@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "HydrologyApi"
+name = "hydrology_api_client_uk"
 version = "0.0.1"
 description = "Load data from the UK Hydology API"
 readme = "README.md"
