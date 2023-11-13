@@ -26,6 +26,7 @@ jobs:
         python-version: '3.11'
     - name: Install dependencies
       run: |
+        cd hydrology_api
         python -m pip install --upgrade pip
         pip install build
     - name: Build package
