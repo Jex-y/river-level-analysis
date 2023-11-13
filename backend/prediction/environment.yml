@@ -1,0 +1,21 @@
+name: river-level
+channels:
+  - defaults
+  - pytorch
+  - nvidia
+dependencies:
+  - python=3.11
+  - numpy
+  - scikit-learn
+  - urllib3
+  - jupyter
+  - pyarrow
+  - matplotlib
+  - seaborn
+  - pytorch
+  - pytorch-cuda=12.1
+  - pip:
+     - ujson
+     - tqdm
+     - wandb
+     - boto3
