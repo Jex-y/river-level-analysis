@@ -1,0 +1,90 @@
+---
+import { asset } from '../lib/data';
+import { Measurement, GoNoGo } from '@/types/entities';
+import Gosvg from '@/assets/go.svg';
+
+interface Props {
+	measurement: Measurement;
+}
+
+const { measurement } = Astro.props;
+---
+
+<li class="py-3 sm:py-4">
+	<div class="flex items-center justify-between">
+		<div class="flex items-center min-w-0">
+			{
+				measurement.GoNoGo == GoNoGo.Go ? (
+					<div class="text-green-500 dark:text-green-400">
+						<svg
+							class="w-6 h-6"
+							xmlns="http://www.w3.org/2000/svg"
+							fill="currentColor"
+							viewBox="0 -960 960 960"
+						>
+							<path d="m424-296 282-282-56-56-226 226-114-114-56 56 170 170Zm56 216q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z" />
+						</svg>
+					</div>
+				) : null
+			}
+			{
+				measurement.GoNoGo == GoNoGo.Warning ? (
+					<div class="text-yellow-500 dark:text-yellow-400">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="w-6 h-6"
+							fill="currentColor"
+							viewBox="0 -960 960 960"
+						>
+							<path d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z" />
+						</svg>
+					</div>
+				) : null
+			}
+			{
+				measurement.GoNoGo == GoNoGo.Nogo ? (
+					<div class="text-red-500 dark:text-red-400">
+						<svg
+							class="w-6 h-6"
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 -960 960 960"
+							fill="currentColor"
+						>
+							<path d="m336-280 144-144 144 144 56-56-144-144 144-144-56-56-144 144-144-144-56 56 144 144-144 144 56 56ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z" />
+						</svg>
+					</div>
+				) : null
+			}
+			<div class="ml-3">
+				<p class="font-medium text-gray-900 truncate dark:text-white">
+					{measurement.name}
+				</p>
+				<div
+					class="flex items-center justify-end flex-1 text-sm text-green-500 dark:text-green-400"
+				>
+					<svg
+						class="w-4 h-4"
+						fill="currentColor"
+						viewBox="0 0 20 20"
+						xmlns="http://www.w3.org/2000/svg"
+						aria-hidden="true"
+					>
+						<path
+							clip-rule="evenodd"
+							fill-rule="evenodd"
+							d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0110 17z"
+						></path>
+					</svg>
+					2.5%
+					<span class="ml-2 text-gray-500">vs last month</span>
+				</div>
+			</div>
+		</div>
+		<div
+			class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white"
+		>
+			{measurement.value}
+			{measurement.units}
+		</div>
+	</div>
+</li>
