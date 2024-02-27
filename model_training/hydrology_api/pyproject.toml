@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hydrology_api_uk_client"
+version = "0.0.1"
+description = "Load data from the UK Hydology API"
+readme = "README.md"
+authors = [{ name = "Edward Jex", email = "edwardjex@live.co.uk" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = [
+    "Hydology",
+    "API",
+    "UK",
+    "Water",
+    "Data",
+    "Environment Agency",
+    "River",
+]
+dependencies = ["pandas", "numpy", "urllib3", "ujson"]
+requires-python = ">=3.9"
