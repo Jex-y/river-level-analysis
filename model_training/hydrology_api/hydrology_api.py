@@ -239,5 +239,5 @@ def process_hydrology_data(df):
         .interpolate(
             "time", limit_direction="both", limit=24 * 4, fill_value="extrapolate"
         )
-        .astype(np.float16)
+        .astype(np.float32)
     )
