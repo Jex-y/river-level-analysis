@@ -3,6 +3,9 @@ model_training/cache/
 frontend/node_modules
 frontend/dist
 wandb/
+data.parquet
+*.pem
+**_logs/
 
 *.pt
 *.pkl
