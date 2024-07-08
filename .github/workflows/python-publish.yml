@@ -11,11 +11,11 @@ name: Upload Hydrology Python Package
 on:
     push:
         paths:
-            - "hydrology_api/**"
+            - "hydro-api/**"
             - ".github/workflows/**"
 defaults:
     run:
-        working-directory: ./hydrology_api
+        working-directory: ./hydro-api
 
 permissions:
     contents: read

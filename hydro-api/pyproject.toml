@@ -3,8 +3,8 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hydrology_api_uk_client"
-version = "0.0.1"
+name = "hydrology"
+version = "1.0.1"
 description = "Load data from the UK Hydology API"
 readme = "README.md"
 authors = [{ name = "Edward Jex", email = "edwardjex@live.co.uk" }]
@@ -22,6 +22,9 @@ keywords = [
     "Data",
     "Environment Agency",
     "River",
+    "Flood",
+    "Rain",
+    "Weather",
 ]
-dependencies = ["pandas", "numpy", "urllib3", "ujson"]
-requires-python = ">=3.9"
+dependencies = ["polars", "httpx"]
+requires-python = ">=3.10"
