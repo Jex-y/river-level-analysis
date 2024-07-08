@@ -31,19 +31,25 @@ class Measure:
 
         @property
         def units(self):
-            return {
-                self.LEVEL: "i-900-m-qualified",
-                self.FLOW: "i-900-m3s-qualified",
-                self.RAINFALL: "t-900-mm-qualified",
-            }.get(self, None)
+            try:
+                return {
+                    self.LEVEL.value: "i-900-m-qualified",
+                    self.FLOW.value: "i-900-m3s-qualified",
+                    self.RAINFALL.value: "t-900-mm-qualified",
+                }[self.value]
+            except KeyError:
+                raise NotImplementedError(f"Unknown measure type: {self.value}")
 
         @property
         def observed_property_name(self):
-            return {
-                self.LEVEL: "waterLevel",
-                self.FLOW: "waterFlow",
-                self.RAINFALL: "rainfall",
-            }.get(self, None)
+            try:
+                return {
+                    self.LEVEL.value: "waterLevel",
+                    self.FLOW.value: "waterFlow",
+                    self.RAINFALL.value: "rainfall",
+                }[self.value]
+            except KeyError:
+                raise NotImplementedError(f"Unknown measure type: {self.value}")
 
         @property
         def enum_dtype(self):
@@ -73,7 +79,7 @@ class HydrologyApi:
     CACHE_MAX_AGE = timedelta(weeks=1)
 
     def __init__(self):
-        self.client = httpx.Client()
+        self.client = httpx.Client(follow_redirects=True)
 
     def __del__(self):
         self.client.close()
@@ -144,7 +150,7 @@ class HydrologyApi:
         while status in [BatchRequestStatus.PENDING, BatchRequestStatus.IN_PROGRESS]:
             response = self.client.get(*args, **kwargs)
 
-            content_type = response.headers.get("Content-Type", "")
+            content_type = response.headers.get("content-type", None)
 
             if content_type == "text/csv":
                 buffer = StringIO(response.text)
@@ -211,6 +217,25 @@ class HydrologyApi:
 
         lat, long = position if position else (None, None)
 
+        params = (
+            remove_none(
+                {
+                    "observedProperty": [
+                        measure.observed_property_name for measure in measures
+                    ]
+                    if measures is not None
+                    else None,
+                    "riverName": river,
+                    "lat": lat,
+                    "long": long,
+                    "dist": radius,
+                    "_limit": limit,
+                    "status.label": "Active",
+                }
+            ),
+        )
+        print(f"{params = }")
+
         result = self.client.get(
             HydrologyApi.API_BASE_URL.join("id/stations"),
             params=remove_none(
@@ -250,7 +275,7 @@ class HydrologyApi:
         measures: List[Measure],
         stations: pl.DataFrame,
         start_date: datetime = START_DATE,
-    ) -> pl.LazyFrame:
+    ) -> pl.DataFrame:
         # Estimate how many rows we are going to get back
         # Each measure is every 15 mins
         estimated_rows = 4 * 24 * (datetime.now() - start_date).days * len(measures)
