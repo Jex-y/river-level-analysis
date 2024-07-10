@@ -9,7 +9,7 @@ from typing import Callable, List, Tuple
 import httpx
 import polars as pl
 
-__all__ = ["HydrologyApi", "Measure"]
+__all__ = ['HydrologyApi', 'Measure']
 
 
 def remove_none(d: dict) -> dict:
@@ -18,38 +18,38 @@ def remove_none(d: dict) -> dict:
 
 class Measure:
     STATION_ID_REGEX = (
-        r"/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
+        r'/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'
     )
     MEASURE_TYPE_REGEX = (
-        r"/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-(.*)-"
+        r'/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-(.*)-'
     )
 
     class MeasureType(Enum):
-        LEVEL = "level"
-        FLOW = "flow"
-        RAINFALL = "rainfall"
+        LEVEL = 'level'
+        FLOW = 'flow'
+        RAINFALL = 'rainfall'
 
         @property
         def units(self):
             try:
                 return {
-                    self.LEVEL.value: "i-900-m-qualified",
-                    self.FLOW.value: "i-900-m3s-qualified",
-                    self.RAINFALL.value: "t-900-mm-qualified",
+                    self.LEVEL.value: 'i-900-m-qualified',
+                    self.FLOW.value: 'i-900-m3s-qualified',
+                    self.RAINFALL.value: 't-900-mm-qualified',
                 }[self.value]
             except KeyError:
-                raise NotImplementedError(f"Unknown measure type: {self.value}")
+                raise NotImplementedError(f'Unknown measure type: {self.value}')
 
         @property
         def observed_property_name(self):
             try:
                 return {
-                    self.LEVEL.value: "waterLevel",
-                    self.FLOW.value: "waterFlow",
-                    self.RAINFALL.value: "rainfall",
+                    self.LEVEL.value: 'waterLevel',
+                    self.FLOW.value: 'waterFlow',
+                    self.RAINFALL.value: 'rainfall',
                 }[self.value]
             except KeyError:
-                raise NotImplementedError(f"Unknown measure type: {self.value}")
+                raise NotImplementedError(f'Unknown measure type: {self.value}')
 
         @property
         def enum_dtype(self):
@@ -64,17 +64,17 @@ class Measure:
         self.measure_type = measure_type
 
     def __str__(self):
-        return f"{self.station_id}-{self.measure_type.value}-{self.measure_type.units}"
+        return f'{self.station_id}-{self.measure_type.value}-{self.measure_type.units}'
 
     def __repr__(self):
         return (
-            f"Measure(station_id={self.station_id}, measure_type={self.measure_type})"
+            f'Measure(station_id={self.station_id}, measure_type={self.measure_type})'
         )
 
 
 class HydrologyApi:
-    API_BASE_URL = httpx.URL("https://environment.data.gov.uk/hydrology/")
-    CACHE_DIR = Path("./.cache")
+    API_BASE_URL = httpx.URL('https://environment.data.gov.uk/hydrology/')
+    CACHE_DIR = Path('./.cache')
     START_DATE = datetime(2008, 1, 1)
     CACHE_MAX_AGE = timedelta(weeks=1)
 
@@ -93,10 +93,10 @@ class HydrologyApi:
             *args,
             **kwargs,
         ) -> pl.LazyFrame:
-            key = f"{load_func.__name__}__{args}__{kwargs}"
+            key = f'{load_func.__name__}__{args}__{kwargs}'
             key = sha256(key.encode()).hexdigest()
 
-            filepath = HydrologyApi.CACHE_DIR / f"{key}.parquet"
+            filepath = HydrologyApi.CACHE_DIR / f'{key}.parquet'
 
             if not HydrologyApi.CACHE_DIR.exists():
                 HydrologyApi.CACHE_DIR.mkdir()
@@ -127,69 +127,69 @@ class HydrologyApi:
         """
 
         class BatchRequestStatus(Enum):
-            PENDING = "pending"
-            IN_PROGRESS = "inprogress"
-            COMPLETE = "complete"
-            FAILED = "failed"
+            PENDING = 'pending'
+            IN_PROGRESS = 'inprogress'
+            COMPLETE = 'complete'
+            FAILED = 'failed'
 
             @staticmethod
             def from_string(s: str):
                 s = s.lower()
-                s = "complete" if s == "completed" else s
+                s = 'complete' if s == 'completed' else s
 
                 assert s in [
                     e.value for e in BatchRequestStatus
-                ], f"Unknown response status: {s}"
+                ], f'Unknown response status: {s}'
                 return BatchRequestStatus(s)
 
         status = BatchRequestStatus.PENDING
 
-        required_headers = {"Accept-Encoding": "gzip"}
-        kwargs["headers"] = {**kwargs.get("headers", {}), **required_headers}
+        required_headers = {'Accept-Encoding': 'gzip'}
+        kwargs['headers'] = {**kwargs.get('headers', {}), **required_headers}
 
         while status in [BatchRequestStatus.PENDING, BatchRequestStatus.IN_PROGRESS]:
             response = self.client.get(*args, **kwargs)
 
-            content_type = response.headers.get("content-type", None)
+            content_type = response.headers.get('content-type', None)
 
-            if content_type == "text/csv":
+            if content_type == 'text/csv':
                 buffer = StringIO(response.text)
                 # write buffer to file for debugging
-                with open("data.csv", "w") as f:
+                with open('data.csv', 'w') as f:
                     f.write(response.text)
                 return pl.read_csv(buffer, low_memory=False)
 
             assert (
-                "application/json" in content_type
-            ), f"Unexpected content type: {content_type}"
+                'application/json' in content_type
+            ), f'Unexpected content type: {content_type}'
 
             response_data: dict = response.json()
-            assert "status" in response_data, "No status field in response"
-            status = BatchRequestStatus.from_string(response_data["status"])
+            assert 'status' in response_data, 'No status field in response'
+            status = BatchRequestStatus.from_string(response_data['status'])
 
             match status:
                 case BatchRequestStatus.PENDING | BatchRequestStatus.IN_PROGRESS:
-                    eta = response_data.get("eta", 60 * 1000) / 1000
+                    eta = response_data.get('eta', 60 * 1000) / 1000
                     sleep(max(eta * 0.1, 1))
 
                 case BatchRequestStatus.COMPLETE:
                     keys = [
-                        "dataUrl",
-                        "url",
+                        'dataUrl',
+                        'url',
                     ]  # Some responses have dataUrl, some have url
                     data_url = next(
                         (response_data.get(k) for k in keys if k in response_data), None
                     )
                     assert (
                         data_url
-                    ), f"Could not find data URL in response: {response_data}"
+                    ), f'Could not find data URL in response: {response_data}'
                     return pl.read_csv(data_url)
 
                 case BatchRequestStatus.FAILED:
-                    raise Exception(f"Batch request failed: {response_data}")
+                    raise Exception(f'Batch request failed: {response_data}')
 
                 case _:
-                    raise Exception(f"Unknown status: {status}")
+                    raise Exception(f'Unknown status: {status}')
 
     @_cache_dataframe_load
     def _request(
@@ -201,9 +201,10 @@ class HydrologyApi:
         response.raise_for_status()
 
         response_data = response.json()
-        assert "items" in response_data, "No items field in response"
-        return pl.DataFrame(response_data["items"])
+        assert 'items' in response_data, 'No items field in response'
+        return pl.DataFrame(response_data['items'])
 
+    @_cache_dataframe_load
     def get_stations(
         self,
         measures: Measure.MeasureType | List[Measure.MeasureType] | None = None,
@@ -217,57 +218,38 @@ class HydrologyApi:
 
         lat, long = position if position else (None, None)
 
-        params = (
-            remove_none(
-                {
-                    "observedProperty": [
-                        measure.observed_property_name for measure in measures
-                    ]
-                    if measures is not None
-                    else None,
-                    "riverName": river,
-                    "lat": lat,
-                    "long": long,
-                    "dist": radius,
-                    "_limit": limit,
-                    "status.label": "Active",
-                }
-            ),
-        )
-        print(f"{params = }")
-
         result = self.client.get(
-            HydrologyApi.API_BASE_URL.join("id/stations"),
+            HydrologyApi.API_BASE_URL.join('id/stations'),
             params=remove_none(
                 {
-                    "observedProperty": [
+                    'observedProperty': [
                         measure.observed_property_name for measure in measures
                     ]
                     if measures
                     else None,
-                    "riverName": river,
-                    "lat": lat,
-                    "long": long,
-                    "dist": radius,
-                    "_limit": limit,
-                    "status.label": "Active",
+                    'riverName': river,
+                    'lat': lat,
+                    'long': long,
+                    'dist': radius,
+                    '_limit': limit,
+                    'status.label': 'Active',
                 }
             ),
         )
         result_json = result.json()
-        assert "items" in result_json, f"Unexpected response: {result_json}"
+        assert 'items' in result_json, f'Unexpected response: {result_json}'
         return pl.from_dicts(
-            result_json["items"],
+            result_json['items'],
             schema={
-                "label": pl.String,
-                "stationGuid": pl.String,
+                'label': pl.String,
+                'stationGuid': pl.String,
                 # "lat": pl.Float64,  # Not used atm
                 # "long": pl.Float64,
                 # "riverName": pl.String, # Breaks Polars for some reason
             },
         ).select(
-            pl.col("stationGuid").alias("station_id"),
-            pl.col("label").alias("station_name"),
+            pl.col('stationGuid').alias('station_id'),
+            pl.col('label').alias('station_name'),
         )
 
     def get_measures(
@@ -281,65 +263,65 @@ class HydrologyApi:
         estimated_rows = 4 * 24 * (datetime.now() - start_date).days * len(measures)
 
         params = {
-            "measure": [str(m) for m in measures],
-            "mineq-date": start_date.strftime("%Y-%m-%d"),
-            "_limit": int(estimated_rows * 1.1),
+            'measure': [str(m) for m in measures],
+            'mineq-date': start_date.strftime('%Y-%m-%d'),
+            '_limit': int(estimated_rows * 1.1),
         }
 
         if estimated_rows > 2_000_000:
             # We need to use the batch api
             df = self._batch_request(
-                HydrologyApi.API_BASE_URL.join("data/batch-readings/batch"),
+                HydrologyApi.API_BASE_URL.join('data/batch-readings/batch'),
                 params=params,
             )
 
         else:
             df = self._request(
-                HydrologyApi.API_BASE_URL.join("data/readings.json"), params=params
+                HydrologyApi.API_BASE_URL.join('data/readings.json'), params=params
             ).with_columns(
-                pl.col("measure").struct.field("@id").alias("measure"),
+                pl.col('measure').struct.field('@id').alias('measure'),
             )
 
         with pl.StringCache():
             return (
                 df.select(
-                    pl.col("value").cast(pl.Float32),
-                    pl.col("quality").cast(pl.Categorical),
-                    pl.col("dateTime").str.to_datetime().alias("timestamp"),
-                    pl.col("measure"),  # .cast(pl.Categorical),
+                    pl.col('value').cast(pl.Float32),
+                    pl.col('quality').cast(pl.Categorical),
+                    pl.col('dateTime').str.to_datetime().alias('timestamp'),
+                    pl.col('measure'),  # .cast(pl.Categorical),
                 )
-                .filter(pl.col("quality").is_in(["Good", "Unchecked", "Estimated"]))
+                .filter(pl.col('quality').is_in(['Good', 'Unchecked', 'Estimated']))
                 .with_columns(
-                    pl.col("measure")
+                    pl.col('measure')
                     .str.extract(Measure.STATION_ID_REGEX)
                     .cast(pl.Categorical)
-                    .alias("station_id"),
-                    pl.col("measure")
+                    .alias('station_id'),
+                    pl.col('measure')
                     .str.extract(Measure.MEASURE_TYPE_REGEX)
                     .cast(pl.Categorical)
-                    .alias("measure_type"),
+                    .alias('measure_type'),
                 )
                 .join(
                     stations.select(
-                        pl.col("station_id").cast(pl.Categorical),
-                        pl.col("station_name").cast(pl.Categorical),
+                        pl.col('station_id').cast(pl.Categorical),
+                        pl.col('station_name').cast(pl.Categorical),
                     ).lazy(),
-                    on="station_id",
-                    how="inner",
+                    on='station_id',
+                    how='inner',
                 )
                 .with_columns(
                     pl.format(
-                        "{} {}", pl.col("station_name"), pl.col("measure_type")
-                    ).alias("series_name"),
+                        '{} {}', pl.col('station_name'), pl.col('measure_type')
+                    ).alias('series_name'),
                 )
                 .collect()  # Pivot can't be lazy
                 .pivot(
-                    "series_name",
-                    index="timestamp",
-                    values="value",
+                    'series_name',
+                    index='timestamp',
+                    values='value',
                 )
-                .sort("timestamp")
-                .upsample(time_column="timestamp", every="15m")
+                .sort('timestamp')
+                .upsample(time_column='timestamp', every='15m')
                 .interpolate()
-                .fill_null(strategy="forward")
+                .fill_null(strategy='forward')
             )
