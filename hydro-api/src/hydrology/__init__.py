@@ -154,9 +154,6 @@ class HydrologyApi:
 
             if content_type == 'text/csv':
                 buffer = StringIO(response.text)
-                # write buffer to file for debugging
-                with open('data.csv', 'w') as f:
-                    f.write(response.text)
                 return pl.read_csv(buffer, low_memory=False)
 
             assert (
