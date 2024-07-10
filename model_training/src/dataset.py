@@ -5,7 +5,6 @@ import polars as pl
 import numpy as np
 from torch.utils.data import Dataset
 from hydrology import HydrologyApi, Measure
-import torch
 
 
 def load_data(
@@ -84,8 +83,8 @@ class TimeSeriesDataset(Dataset):
         self,
         X: np.array,
         y: np.array,
-        seq_length: int = 4 * 24,
-        pred_length: int = 4 * 6,
+        seq_length: int,
+        pred_length: int,
     ):
         self.X = X
         self.y = y

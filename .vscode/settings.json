@@ -1,5 +1,22 @@
 {
   "cSpell.words": [
     "inprogress"
-  ]
+  ],
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    ".venv": true,
+    "**/.cache": true,
+    "**/.ruff_cache": true,
+    "model_training/outputs": true,
+    "model_training/wandb": true,
+    "**/node_modules": true,
+    "**/__pycache__": true,
+    "**/*.egg-info": true,
+    "**/.pytest_cache": true,
+  }
 }

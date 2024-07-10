@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -19,3 +20,4 @@ class Config:
     ff_dim: int
     normalize_before: bool
     norm_type: str
+    model_save_dir: Path
