@@ -12,7 +12,6 @@ class Config:
     batch_size: int
     train_epochs: int
     quantiles: list[float]
-    log_freq: int
 
     activation_function: str
     num_blocks: int

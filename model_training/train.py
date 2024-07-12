@@ -221,9 +221,10 @@ def main(config: Config):
     if not config.model_save_dir.exists():
         os.mkdir(config.model_save_dir)
 
-    model_file_path = config.model_save_dir / f'{wandb.run.name}.pt'
+    model_file_path = config.model_save_dir / f'{wandb.run.name}_torchscript.pt'
 
-    torch.save(model, model_file_path)
+    model_torchscript = torch.jit.script(model)
+    model_torchscript.save(model_file_path)
 
     wandb.log_artifact(model_file_path, name='trained_model', type='model')
 
