@@ -45,7 +45,6 @@ class DataFrameApi(ABC):
         ) -> pl.LazyFrame:
             key = f'{load_func.__name__}__{args}__{kwargs}'
             key = sha256(key.encode()).hexdigest()
-
             filepath = self.cache_dir / f'{key}.parquet'
 
             if not self.cache_dir.exists():
@@ -63,9 +62,12 @@ class DataFrameApi(ABC):
             assert (
                 isinstance(df, pl.DataFrame) or isinstance(df, pl.LazyFrame)
             ), f'Expected DataFrame fuction {load_func.__name__} to return a pl.DataFrame or pl.LazyFrame, got {type(df)}'
-            df.write_parquet(filepath)
 
-            return df.lazy() if isinstance(df, pl.DataFrame) else df
+            is_lazy = isinstance(df, pl.LazyFrame)
+
+            (df.collect() if is_lazy else df).write_parquet(filepath)
+
+            return df if is_lazy else df.lazy()
 
         return wrapper
 

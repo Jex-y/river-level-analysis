@@ -7,6 +7,9 @@ import polars as pl
 from time import sleep
 from typing import Tuple
 from .models import Parameter, ParameterEnumPolars
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def remove_none(d: dict) -> dict:
@@ -59,16 +62,18 @@ class HydrologyApi(DataFrameApi):
         kwargs['headers'] = {**kwargs.get('headers', {}), **required_headers}
 
         while status in [BatchRequestStatus.PENDING, BatchRequestStatus.IN_PROGRESS]:
-            response = self.http_client.get(*args, **kwargs)
+            response = self.http_client.get(*args, **kwargs, follow_redirects=True)
+            response.raise_for_status()
 
             content_type = response.headers.get('content-type', None)
 
             if content_type == 'text/csv':
-                return pl.scan_csv(StringIO(response.text))
+                logging.info('Received immediate response as CSV')
+                return pl.read_csv(StringIO(response.text))
 
             assert (
-                'application/json' in content_type
-            ), f'Unexpected content type: {content_type}'
+                content_type is not None and 'application/json' in content_type
+            ), f'Unexpected content type: {content_type}. Response: {response.text}'
 
             response_data: dict = response.json()
 
@@ -78,9 +83,12 @@ class HydrologyApi(DataFrameApi):
             match status:
                 case BatchRequestStatus.PENDING | BatchRequestStatus.IN_PROGRESS:
                     eta = response_data.get('eta', 60 * 1000) / 1000
-                    sleep(max(eta * 0.1, 1))
+                    logging.info(f'Batch request status: {status}. ETA: {eta}')
+                    sleep(max(min(eta, 10), 1))
 
                 case BatchRequestStatus.COMPLETE:
+                    logging.info('Batch request complete')
+
                     keys = [
                         'dataUrl',
                         'url',
@@ -91,12 +99,16 @@ class HydrologyApi(DataFrameApi):
                     assert (
                         data_url
                     ), f'Could not find data URL in response: {response_data}'
+
+                    logging.info(f'Fetching data from: {data_url}')
                     return pl.read_csv(data_url)
 
                 case BatchRequestStatus.FAILED:
+                    logging.error(f'Batch request failed: {response_data}')
                     raise Exception(f'Batch request failed: {response_data}')
 
                 case _:
+                    logging.error(f'Batch request unknown status: {status}')
                     raise Exception(f'Unknown status: {status}')
 
     @DataFrameApi._cache_dataframe_load
@@ -138,10 +150,7 @@ class HydrologyApi(DataFrameApi):
         )
 
         result.raise_for_status()
-        return pl.scan_csv(StringIO(result.text)).select(
-            pl.col('notation'),
-            pl.col('label'),
-        )
+        return pl.read_csv(StringIO(result.text), columns=['notation', 'label'])
 
     def _encode_measure(
         self,
@@ -152,7 +161,7 @@ class HydrologyApi(DataFrameApi):
 
         units = {
             Parameter.LEVEL: 'i-900-m-qualified',
-            Parameter.RAINFALL: 'i-900-mm-qualified',
+            Parameter.RAINFALL: 't-900-mm-qualified',
         }
 
         return f'{station_guid}-{parameter.value}-{units[parameter]}'
@@ -197,6 +206,8 @@ class HydrologyApi(DataFrameApi):
             4 * 24 * (end_date or datetime.now() - start_date).days * len(stations)
         )
 
+        logging.info(f'Estimated rows to be fetched: {estimated_rows}')
+
         params = remove_none(
             {
                 'measure': [
@@ -210,12 +221,14 @@ class HydrologyApi(DataFrameApi):
 
         if estimated_rows > 2_000_000:
             # We need to use the batch api
+            logging.info('Using batch API as estimated rows > 2,000,000')
             df = self._get_batch(
                 self.api_base_url.join('data/batch-readings/batch'),
                 params=params,
             )
 
         else:
+            logging.info('Using standard API')
             df = self._get(
                 self.api_base_url.join('data/readings.csv'),
                 params=params,
