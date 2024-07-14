@@ -22,10 +22,10 @@ class HydrologyApi(DataFrameApi):
     API documentation: https://environment.data.gov.uk/hydrology/doc/reference
     """
 
-    def __init__(self):
+    def __init__(self, cache_max_age: timedelta = timedelta(minutes=1)):
         super().__init__(
             api_base_url=httpx.URL('https://environment.data.gov.uk/hydrology/'),
-            cache_max_age=timedelta(weeks=1),
+            cache_max_age=cache_max_age,
         )
 
     @DataFrameApi._cache_dataframe_load

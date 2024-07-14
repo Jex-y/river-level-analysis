@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hydrology"
-version = "2.1.0"
+version = "2.1.1"
 description = "Load data from the UK Hydology API"
 readme = "README.md"
 authors = [{ name = "Edward Jex", email = "edwardjex@live.co.uk" }]
