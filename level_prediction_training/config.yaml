@@ -3,21 +3,18 @@ prediction_length: 96
 context_length: 16
 train_epochs: 100
 quantiles: [0.05, 0.5, 0.95]
-train_split: 0.8
-model_save_dir: './models'
+train_split: 0.85
+model_save_dir: ./models
+target_col: Durham New Elvet Bridge - level (m)
 
-lr: 0.0007
-batch_size: 512
+lr: 0.0005
+batch_size: 1024
 
 activation_function: relu
 num_blocks: 3
 dropout: 0.05
 ff_dim: 16
 normalize_before: true
-norm_type: "layer"
+norm_type: layer
 
-dataset:
-  measures:
-    # Durham new Elvet
-    rloi_id: 8288
-    parameter: "level"
+stations_filepath: ./stations.csv

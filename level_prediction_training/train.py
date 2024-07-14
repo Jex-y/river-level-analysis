@@ -13,7 +13,7 @@ from omegaconf import OmegaConf
 from sklearn.compose import make_column_selector, make_column_transformer
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from src.config import Config
-from src.dataset import TimeSeriesDataset, load_data
+from src.dataset import TimeSeriesDataset, load_training_data
 from src.quantile_loss import quantile_loss
 from src.ts_mixer import TSMixer
 from torch.optim import AdamW
@@ -27,7 +27,7 @@ httpx_logger = logging.getLogger('httpx')
 httpx_logger.setLevel(logging.WARNING)
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
 
 
 cs = ConfigStore.instance()
@@ -40,54 +40,45 @@ def main(config: Config):
     log.info(f'Using seed: {seed}')
     torch.manual_seed(seed)
 
+    stations = pl.read_csv(config.stations_filepath)
+
     config.model_save_dir = Path(config.model_save_dir)
 
     wandb.init(
         project='river-level-forecasting',
         config={
             **OmegaConf.to_container(config),
+            'stations': stations.to_dict(),
             'seed': seed,
         },
     )
 
     log.info(f'wandb run: {wandb.run.get_url()}')
 
-    train_df, test_df = load_data(train_split=config.train_split)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    log.info(f'Using device: {device}')
+
+    train_df, test_df = load_training_data(stations, train_split=config.train_split)
 
     X_preprocessing = make_column_transformer(
         (
             StandardScaler(),
-            make_column_selector(pattern='level-i-900-m'),
+            make_column_selector(pattern=r'- level \(m\)'),
         ),
         (
             MinMaxScaler(),
-            make_column_selector(pattern='rainfall-t-900-mm'),
+            make_column_selector(pattern=r'- rainfall \(mm\)'),
         ),
         remainder='passthrough',
     )
 
-    X_train = (
-        train_df.select(pl.col('*').exclude('timestamp')).to_pandas().astype('float32')
-    )
-    y_train = (
-        train_df.select('Durham New Elvet Bridge level-i-900-m')
-        .to_numpy()
-        .astype('float32')
-    )
-
-    X_test = (
-        test_df.select(pl.col('*').exclude('timestamp')).to_pandas().astype('float32')
-    )
-    y_test = (
-        test_df.select('Durham New Elvet Bridge level-i-900-m')
-        .to_numpy()
-        .astype('float32')
-    )
-
     y_preprocessing = StandardScaler()
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    log.info(f'Using device: {device}')
+    X_train = train_df.to_pandas().astype('float32')
+    y_train = train_df.select(config.target_col).to_numpy().astype('float32')
+
+    X_test = test_df.to_pandas().astype('float32')
+    y_test = test_df.select(config.target_col).to_numpy().astype('float32')
 
     X_train = torch.tensor(X_preprocessing.fit_transform(X_train)).to(device)
     y_train = torch.tensor(y_preprocessing.fit_transform(y_train)).to(device)
@@ -134,14 +125,6 @@ def main(config: Config):
 
     optim = AdamW(model.parameters(), lr=config.lr)
 
-    overall_pbar = tqdm(
-        total=config.train_epochs,
-        desc='Training',
-        unit='epoch',
-        bar_format='{desc}: {percentage:3.0f}%|{bar}| {rate_fmt}{postfix} [{elapsed}<{remaining}]',
-    )
-
-    global_step = 0
     quantiles = torch.tensor(config.quantiles, device=device)
     train_metrics = torch.zeros(len(quantiles) + 2, device=device)
     val_metrics = torch.zeros(len(quantiles) + 2, device=device)
@@ -151,18 +134,28 @@ def main(config: Config):
         'mae',
     ]
 
+    overall_pbar = tqdm(
+        total=config.train_epochs * steps_per_epoch * 2,
+        desc='Training',
+        unit='step',
+        bar_format='{desc}: {percentage:3.0f}%|{bar}| {rate_fmt}{postfix} [{elapsed}<{remaining}]',
+        smoothing=0.01,
+    )
+
     def log_metrics():
-        wandb.log(
-            {
-                f'{type}_{metric_name}': metric
-                for metrics, type, len in [
-                    (train_metrics, 'train', len(train_loader)),
-                    (val_metrics, 'val', len(test_loader)),
-                ]
-                for metric, metric_name in zip(
-                    metrics.cpu().detach() / len, metric_names
-                )
-            },
+        metrics_dict = {
+            f'{type}_{metric_name}': metric
+            for metrics, type, len in [
+                (train_metrics, 'train', len(train_loader)),
+                (val_metrics, 'val', len(test_loader)),
+            ]
+            for metric, metric_name in zip(metrics.cpu().detach() / len, metric_names)
+        }
+
+        wandb.log(metrics_dict)
+
+        overall_pbar.set_postfix(
+            {k: f'{v:.4f}' for k, v in metrics_dict.items() if 'loss_total' in k}
         )
 
     for epoch in range(config.train_epochs):
@@ -189,8 +182,7 @@ def main(config: Config):
                 torch.abs(y_batch - y_pred[..., 1:2]).detach().mean()
             )
 
-            overall_pbar.update(1 / steps_per_epoch)
-            global_step += 1
+            overall_pbar.update()
 
         model.eval()
 
@@ -210,7 +202,7 @@ def main(config: Config):
                 torch.abs(y_batch - y_pred[..., 1:2]).detach().mean()
             )
 
-            overall_pbar.update(1 / steps_per_epoch)
+            overall_pbar.update()
 
         log_metrics()
         train_metrics.zero_()

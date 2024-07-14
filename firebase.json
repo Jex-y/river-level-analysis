@@ -1,0 +1,15 @@
+{
+  "functions": [
+    {
+      "source": "level_prediction_inference",
+      "codebase": "level_prediction",
+      "ignore": [
+        ".inference-venv",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}

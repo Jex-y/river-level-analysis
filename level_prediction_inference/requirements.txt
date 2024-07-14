@@ -1,0 +1,6 @@
+firebase_functions~=0.1.0
+hydro_api
+numpy==1.26.4
+polars==1.1.0
+scikit-learn==1.5.0
+torch==2.3.1

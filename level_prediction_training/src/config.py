@@ -12,6 +12,8 @@ class Config:
     batch_size: int
     train_epochs: int
     quantiles: list[float]
+    target_col: str
+    train_split: float
 
     activation_function: str
     num_blocks: int
@@ -20,3 +22,5 @@ class Config:
     normalize_before: bool
     norm_type: str
     model_save_dir: Path
+
+    stations_filepath: Path
