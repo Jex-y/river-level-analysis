@@ -54,10 +54,10 @@ class DataFrameApi(ABC):
             if filepath.exists():
                 last_modified = datetime.fromtimestamp(filepath.stat().st_mtime)
                 if last_modified + self.cache_max_age > datetime.now():
-                    logging.info('Loading response from cache')
+                    log.info('Loading response from cache')
                     return pl.scan_parquet(filepath)
                 else:
-                    logging.info('Response in cache is stale')
+                    log.info('Response in cache is stale')
                     filepath.unlink()
 
             df = load_func(self, *args, **kwargs)
@@ -68,7 +68,7 @@ class DataFrameApi(ABC):
 
             is_lazy = isinstance(df, pl.LazyFrame)
 
-            logging.info('Writing response to cache')
+            log.info('Writing response to cache')
             (df.collect() if is_lazy else df).write_parquet(filepath)
 
             return df if is_lazy else df.lazy()

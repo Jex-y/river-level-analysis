@@ -2,7 +2,7 @@ import math
 from datetime import datetime, timedelta
 
 import polars as pl
-from hydrology.hydrology import HydrologyApi
+from hydrology import HydrologyApi
 import numpy as np
 from torch.utils.data import Dataset
 

@@ -1,0 +1,37 @@
+version: 1
+disable_existing_loggers: False
+formatters:
+  simple:
+    format: "[%(levelname)s] [%(asctime)s] [%(name)s] %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+
+handlers:
+  console:
+    class: rich.logging.RichHandler
+    level: INFO
+    formatter: simple
+    show_time: False
+    show_path: False
+    show_level: False 
+
+  file_handler:
+    class: logging.FileHandler
+    level: INFO
+    formatter: simple
+    filename: training.log
+
+loggers:
+  httpx:
+    level: INFO
+    handlers: [file_handler]
+    propagate: no
+
+  hydrology:
+    level: INFO
+    handlers: [file_handler]
+    propagate: no
+  
+  training:
+    level: INFO
+    handlers: [console, file_handler]
+    propagate: no

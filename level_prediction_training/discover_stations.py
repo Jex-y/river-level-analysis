@@ -2,7 +2,6 @@ from hydrology.hydrology import HydrologyApi
 from hydrology.models import Parameter
 import polars as pl
 import pprint
-import yaml
 
 api = HydrologyApi()
 
