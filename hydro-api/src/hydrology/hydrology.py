@@ -9,7 +9,7 @@ from typing import Tuple
 from .models import Parameter, ParameterEnumPolars
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('hydrology')
 
 
 def remove_none(d: dict) -> dict:
@@ -25,7 +25,7 @@ class HydrologyApi(DataFrameApi):
     def __init__(self):
         super().__init__(
             api_base_url=httpx.URL('https://environment.data.gov.uk/hydrology/'),
-            cache_max_age=timedelta(seconds=1),
+            cache_max_age=timedelta(weeks=1),
         )
 
     @DataFrameApi._cache_dataframe_load
@@ -39,6 +39,7 @@ class HydrologyApi(DataFrameApi):
         Returns:
             pd.DataFrame: The data returned by the API
         """
+        logging.info(f'Batch request: {args}, {kwargs}')
 
         class BatchRequestStatus(Enum):
             PENDING = 'pending'
@@ -68,7 +69,7 @@ class HydrologyApi(DataFrameApi):
             content_type = response.headers.get('content-type', None)
 
             if content_type == 'text/csv':
-                logging.info('Received immediate response as CSV')
+                logging.debug('Received immediate response as CSV')
                 return pl.read_csv(StringIO(response.text))
 
             assert (
@@ -206,7 +207,7 @@ class HydrologyApi(DataFrameApi):
             4 * 24 * (end_date or datetime.now() - start_date).days * len(stations)
         )
 
-        logging.info(f'Estimated rows to be fetched: {estimated_rows}')
+        logging.debug(f'Estimated rows to be fetched: {estimated_rows}')
 
         params = remove_none(
             {
@@ -221,14 +222,14 @@ class HydrologyApi(DataFrameApi):
 
         if estimated_rows > 2_000_000:
             # We need to use the batch api
-            logging.info('Using batch API as estimated rows > 2,000,000')
+            logging.debug('Using batch API as estimated rows > 2,000,000')
             df = self._get_batch(
                 self.api_base_url.join('data/batch-readings/batch'),
                 params=params,
             )
 
         else:
-            logging.info('Using standard API')
+            logging.debug('Using standard API as estimated rows < 2,000,000')
             df = self._get(
                 self.api_base_url.join('data/readings.csv'),
                 params=params,

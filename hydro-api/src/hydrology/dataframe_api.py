@@ -6,9 +6,11 @@ import httpx
 from typing import Callable
 import polars as pl
 from io import StringIO
-import warnings
+import logging
 
 __all__ = ['DataFrameApi']
+
+log = logging.getLogger('hydrology')
 
 
 class DataFrameApi(ABC):
@@ -31,8 +33,7 @@ class DataFrameApi(ABC):
         self.http_client = http_client
 
     def __del__(self):
-        pass
-        # self.http_client.close()
+        self.http_client.close()
 
     @staticmethod
     def _cache_dataframe_load(
@@ -53,8 +54,10 @@ class DataFrameApi(ABC):
             if filepath.exists():
                 last_modified = datetime.fromtimestamp(filepath.stat().st_mtime)
                 if last_modified + self.cache_max_age > datetime.now():
+                    logging.info('Loading response from cache')
                     return pl.scan_parquet(filepath)
                 else:
+                    logging.info('Response in cache is stale')
                     filepath.unlink()
 
             df = load_func(self, *args, **kwargs)
@@ -65,6 +68,7 @@ class DataFrameApi(ABC):
 
             is_lazy = isinstance(df, pl.LazyFrame)
 
+            logging.info('Writing response to cache')
             (df.collect() if is_lazy else df).write_parquet(filepath)
 
             return df if is_lazy else df.lazy()
@@ -77,6 +81,8 @@ class DataFrameApi(ABC):
         *args,
         **kwargs,
     ) -> pl.DataFrame:
+        logging.info(f'get request: {args}, {kwargs}')
+
         response = self.http_client.get(*args, **kwargs)
         response.raise_for_status()
 
@@ -84,13 +90,15 @@ class DataFrameApi(ABC):
 
         match reponse_type:
             case 'text/csv':
+                logging.info('Reading CSV response')
                 return pl.read_csv(StringIO(response.text))
 
             case 'application/json':
-                warnings.warn(
+                logging.warning(
                     f'A JSON response was received, but CSV is prefered. Request: {args}, {kwargs}'
                 )
                 return pl.DataFrame(response.json()['items'])
 
             case _:
+                logging.error(f'Unsupported response type: {reponse_type}')
                 raise ValueError(f'Unsupported response type: {reponse_type}')
