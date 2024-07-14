@@ -273,7 +273,7 @@ class HydrologyApi(DataFrameApi):
                     index='dateTime',
                     values='value',
                 )
-                .sort('dateTime', descending=True)
+                .sort('dateTime')
                 .upsample(time_column='dateTime', every='15m')
                 .interpolate()
                 .fill_null(strategy='forward')
