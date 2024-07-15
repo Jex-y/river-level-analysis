@@ -10,7 +10,12 @@ parameters:
   lr:
     distribution: log_uniform_values
     min: 1e-7
-    max: 1e-2
+    max: 1e-1
+
+  weight_decay:
+    distribution: log_uniform_values
+    min: 1e-7
+    max: 1e-1
 
   batch_size:
     distribution: q_log_uniform_values
@@ -19,11 +24,11 @@ parameters:
     max: 8192
 
   num_blocks:
-    values: [1,2,3,4]
+    values: [1,2,3,4,5,6]
 
   dropout:
     distribution: q_uniform
-    q: 0.01
+    q: 0.001
     min: 0.0
     max: 0.25
 
