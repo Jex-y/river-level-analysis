@@ -11,21 +11,19 @@ import asyncio
 
 # Some imports are conditional to improve compute time efficiency when prediction is not required.
 
-try:
-    from google.auth import default as default_auth
+# try:
+#     from google.auth import default as default_auth
 
-    creds, _ = default_auth()
-except:
-    from firebase_admin import credentials
-    from pathlib import Path
+#     creds, _ = default_auth()
+# except:
+#     from firebase_admin import credentials
+#     from pathlib import Path
 
-    creds = credentials.Certificate(
-        Path(__file__).parent / '../firebase-service-account-key.json'
-    )
+#     creds = credentials.Certificate(
+#         Path(__file__).parent / '../firebase-service-account-key.json'
+#     )
 
-initialize_app(
-    credential=creds, options={'storageBucket': 'durham-river-level.appspot.com'}
-)
+initialize_app(options={'storageBucket': 'durham-river-level.appspot.com'})
 logging.basicConfig(
     level=logging.INFO, format='[%(levelname)s] [%(asctime)s] [%(name)s] %(message)s'
 )
@@ -215,7 +213,6 @@ async def predict(df, config: Config):
     ]
 
 
-# @scheduler_fn.on_schedule(schedule='*/5 * * * *', region='europe-west2')
 async def predict_if_new_data():
     logging.info('Checking if new data is available')
     prev_metadata = await load_prev_metadata()
@@ -280,5 +277,6 @@ async def predict_if_new_data():
     )
 
 
-if __name__ == '__main__':
+@scheduler_fn.on_schedule(schedule='*/5 * * * *', region='europe-west2')
+def level_prediction_inference(_event):
     asyncio.run(predict_if_new_data())
