@@ -18,6 +18,7 @@ class Config:
     activation_function: str
     num_blocks: int
     dropout: float
+    weight_decay: float
     ff_dim: int
     normalize_before: bool
     norm_type: str

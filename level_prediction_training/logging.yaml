@@ -16,7 +16,7 @@ handlers:
 
   file_handler:
     class: logging.FileHandler
-    level: INFO
+    level: DEBUG
     formatter: simple
     filename: training.log
 
@@ -27,7 +27,7 @@ loggers:
     propagate: no
 
   hydrology:
-    level: INFO
+    level: DEBUG
     handlers: [file_handler]
     propagate: no
   

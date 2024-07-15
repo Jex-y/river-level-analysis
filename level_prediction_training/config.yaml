@@ -1,20 +1,21 @@
 seed: null
 prediction_length: 96
 context_length: 32
-train_epochs: 25
+train_epochs: 30
 quantiles: [0.05, 0.5, 0.95]
 train_split: 0.85
 model_save_dir: ./models
-target_col: Durham New Elvet Bridge - level (m)
+target_col: Durham New Elvet Bridge - level
 
-lr: 0.005
-batch_size: 512
+lr: 0.0001
+batch_size: 256
 
 activation_function: relu
 num_blocks: 3
-dropout: 0.2
-ff_dim: 32
+dropout: 0.1
+ff_dim: 16
 normalize_before: true
 norm_type: layer
+weight_decay: 0.1
 
-stations_filepath: ./stations.csv
+stations_filepath: ./stations.json

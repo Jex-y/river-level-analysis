@@ -7,13 +7,10 @@ import polars as pl
 from time import sleep
 from typing import Tuple
 from .models import Parameter, ParameterEnumPolars
-import logging
+from logging import getLogger
+from .utils import remove_none
 
-logger = logging.getLogger('hydrology')
-
-
-def remove_none(d: dict) -> dict:
-    return {k: v for k, v in d.items() if v is not None}
+logger = getLogger('hydrology')
 
 
 class HydrologyApi(DataFrameApi):
@@ -39,7 +36,7 @@ class HydrologyApi(DataFrameApi):
         Returns:
             pd.DataFrame: The data returned by the API
         """
-        logging.info(f'Batch request: {args}, {kwargs}')
+        logger.info(f'Batch request: {args}, {kwargs}')
 
         class BatchRequestStatus(Enum):
             PENDING = 'pending'
@@ -59,8 +56,7 @@ class HydrologyApi(DataFrameApi):
 
         status = BatchRequestStatus.PENDING
 
-        required_headers = {'Accept-Encoding': 'gzip'}
-        kwargs['headers'] = {**kwargs.get('headers', {}), **required_headers}
+        kwargs['headers'] = {**kwargs.get('headers', {}), **{'Accept-Encoding': 'gzip'}}
 
         while status in [BatchRequestStatus.PENDING, BatchRequestStatus.IN_PROGRESS]:
             response = self.http_client.get(*args, **kwargs, follow_redirects=True)
@@ -69,7 +65,7 @@ class HydrologyApi(DataFrameApi):
             content_type = response.headers.get('content-type', None)
 
             if content_type == 'text/csv':
-                logging.debug('Received immediate response as CSV')
+                logger.debug('Received immediate response as CSV')
                 return pl.read_csv(StringIO(response.text))
 
             assert (
@@ -84,11 +80,12 @@ class HydrologyApi(DataFrameApi):
             match status:
                 case BatchRequestStatus.PENDING | BatchRequestStatus.IN_PROGRESS:
                     eta = response_data.get('eta', 60 * 1000) / 1000
-                    logging.info(f'Batch request status: {status}. ETA: {eta}')
+                    logger.info(f'Batch request status: {status}. ETA: {eta}')
+                    logger.debug(f'Response data: {response_data}')
                     sleep(max(min(eta, 10), 1))
 
                 case BatchRequestStatus.COMPLETE:
-                    logging.info('Batch request complete')
+                    logger.info('Batch request complete')
 
                     keys = [
                         'dataUrl',
@@ -101,15 +98,15 @@ class HydrologyApi(DataFrameApi):
                         data_url
                     ), f'Could not find data URL in response: {response_data}'
 
-                    logging.info(f'Fetching data from: {data_url}')
+                    logger.info(f'Fetching data from: {data_url}')
                     return pl.read_csv(data_url)
 
                 case BatchRequestStatus.FAILED:
-                    logging.error(f'Batch request failed: {response_data}')
+                    logger.error(f'Batch request failed: {response_data}')
                     raise Exception(f'Batch request failed: {response_data}')
 
                 case _:
-                    logging.error(f'Batch request unknown status: {status}')
+                    logger.error(f'Batch request unknown status: {status}')
                     raise Exception(f'Unknown status: {status}')
 
     @DataFrameApi._cache_dataframe_load
@@ -151,7 +148,13 @@ class HydrologyApi(DataFrameApi):
         )
 
         result.raise_for_status()
-        return pl.read_csv(StringIO(result.text), columns=['notation', 'label'])
+        return pl.read_csv(
+            StringIO(result.text),
+            columns=['hydrology_api_notation', 'label', 'RLOIid', 'lat', 'long'],
+            schema_overrides={
+                'RLOIid': pl.Utf8,  # Sometimes gets interpreted as an int
+            },
+        )
 
     def _encode_measure(
         self,
@@ -161,11 +164,11 @@ class HydrologyApi(DataFrameApi):
         parameter = Parameter(parameter)
 
         units = {
-            Parameter.LEVEL: 'i-900-m-qualified',
-            Parameter.RAINFALL: 't-900-mm-qualified',
+            Parameter.LEVEL: 'level-i-900-m-qualified',
+            Parameter.RAINFALL: 'rainfall-t-900-mm-qualified',
         }
 
-        return f'{station_guid}-{parameter.value}-{units[parameter]}'
+        return f'{station_guid}-{units[parameter]}'
 
     def get_measures(
         self,
@@ -176,7 +179,7 @@ class HydrologyApi(DataFrameApi):
         """Get measures for a list of stations between two dates.
 
         Args:
-            stations (pl.DataFrame): A polars dataframe with columns 'notation', 'label', and 'parameter'.
+            stations (pl.DataFrame): A polars dataframe with columns 'hydrology_api_notation', 'label', and 'parameter'.
             start_date (datetime): The start date to get measures from.
             end_date (datetime | None, optional): The end date to get measures up to. Defaults to include up to the most recent data.
 
@@ -185,7 +188,7 @@ class HydrologyApi(DataFrameApi):
         """
 
         assert (
-            'notation' in stations.columns
+            'hydrology_api_notation' in stations.columns
         ), 'Stations dataframe must have a column "notation"'
         assert (
             'label' in stations.columns
@@ -207,13 +210,15 @@ class HydrologyApi(DataFrameApi):
             4 * 24 * (end_date or datetime.now() - start_date).days * len(stations)
         )
 
-        logging.debug(f'Estimated rows to be fetched: {estimated_rows}')
+        logger.debug(f'Estimated rows to be fetched: {estimated_rows}')
 
         params = remove_none(
             {
                 'measure': [
                     self._encode_measure(*measure)
-                    for measure in stations[['notation', 'parameter']].iter_rows()
+                    for measure in stations[
+                        ['hydrology_api_notation', 'parameter']
+                    ].iter_rows()
                 ],
                 'mineq-date': start_date.strftime('%Y-%m-%d'),
                 'maxeq-date': end_date.strftime('%Y-%m-%d') if end_date else None,
@@ -222,14 +227,14 @@ class HydrologyApi(DataFrameApi):
 
         if estimated_rows > 2_000_000:
             # We need to use the batch api
-            logging.debug('Using batch API as estimated rows > 2,000,000')
+            logger.debug('Using batch API as estimated rows > 2,000,000')
             df = self._get_batch(
                 self.api_base_url.join('data/batch-readings/batch'),
                 params=params,
             )
 
         else:
-            logging.debug('Using standard API as estimated rows < 2,000,000')
+            logger.debug('Using standard API as estimated rows < 2,000,000')
             df = self._get(
                 self.api_base_url.join('data/readings.csv'),
                 params=params,
@@ -246,7 +251,7 @@ class HydrologyApi(DataFrameApi):
                     pl.col('value').cast(pl.Float32),
                     pl.col('quality').cast(pl.Categorical),
                     pl.col('dateTime').str.to_datetime(),
-                    pl.col('measure').struct[0].alias('notation'),
+                    pl.col('measure').struct[0].alias('hydrology_api_notation'),
                     pl.col('measure')
                     .struct[1]
                     .alias('parameter')
@@ -256,16 +261,17 @@ class HydrologyApi(DataFrameApi):
                 .filter(pl.col('quality').is_in(['Good', 'Unchecked', 'Estimated']))
                 .join(
                     stations if isinstance(stations, pl.LazyFrame) else stations.lazy(),
-                    on=['notation', 'parameter'],
+                    on=['hydrology_api_notation', 'parameter'],
                     how='inner',
                 )
-                .with_columns(
+                .select(
                     pl.format(
-                        '{} - {} ({})',
+                        '{} - {}',
                         pl.col('label'),
                         pl.col('parameter'),
-                        pl.col('units'),
-                    ).alias('label')
+                    ).alias('label'),
+                    pl.col('dateTime'),
+                    pl.col('value'),
                 )
                 .collect()  # Pivot can't be lazy
                 .pivot(

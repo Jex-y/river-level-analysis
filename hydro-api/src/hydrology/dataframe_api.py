@@ -32,8 +32,8 @@ class DataFrameApi(ABC):
         self.cache_max_age = cache_max_age
         self.http_client = http_client
 
-    def __del__(self):
-        self.http_client.close()
+    # def __del__(self):
+    # self.http_client.close()
 
     @staticmethod
     def _cache_dataframe_load(
@@ -44,7 +44,7 @@ class DataFrameApi(ABC):
             *args,
             **kwargs,
         ) -> pl.LazyFrame:
-            key = f'{load_func.__name__}__{args}__{kwargs}'
+            key = f'{type(self).__name__}__{load_func.__name__}__{args}__{kwargs}'
             key = sha256(key.encode()).hexdigest()
             filepath = self.cache_dir / f'{key}.parquet'
 
@@ -75,6 +75,26 @@ class DataFrameApi(ABC):
 
         return wrapper
 
+    def _parse_response(self, response: httpx.Response) -> pl.DataFrame:
+        response.raise_for_status()
+
+        reponse_type = response.headers.get('content-type')
+
+        match reponse_type.split(';')[0]:
+            case 'text/csv':
+                log.info('Reading CSV response')
+                return pl.read_csv(StringIO(response.text))
+
+            case 'application/json':
+                log.warning(
+                    f'A JSON response was received, but CSV is prefered. Request: {args}, {kwargs}'
+                )
+                return pl.DataFrame(response.json()['items'])
+
+            case _:
+                log.error(f'Unsupported response type: {reponse_type}')
+                raise ValueError(f'Unsupported response type: {reponse_type}')
+
     @_cache_dataframe_load
     def _get(
         self,
@@ -83,22 +103,4 @@ class DataFrameApi(ABC):
     ) -> pl.DataFrame:
         logging.info(f'get request: {args}, {kwargs}')
 
-        response = self.http_client.get(*args, **kwargs)
-        response.raise_for_status()
-
-        reponse_type = response.headers.get('content-type')
-
-        match reponse_type:
-            case 'text/csv':
-                logging.info('Reading CSV response')
-                return pl.read_csv(StringIO(response.text))
-
-            case 'application/json':
-                logging.warning(
-                    f'A JSON response was received, but CSV is prefered. Request: {args}, {kwargs}'
-                )
-                return pl.DataFrame(response.json()['items'])
-
-            case _:
-                logging.error(f'Unsupported response type: {reponse_type}')
-                raise ValueError(f'Unsupported response type: {reponse_type}')
+        return self._parse_response(self.http_client.get(*args, **kwargs))

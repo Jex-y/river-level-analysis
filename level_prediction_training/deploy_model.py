@@ -15,30 +15,22 @@ parser.add_argument(
 def main():
     args = parser.parse_args()
     model_dir = Path(args.model_dir)
-    pytorch_model = model_dir / 'model_torchscript.pt'
-    preprocessing_pipeline = model_dir / 'preprocessing.pickle'
-    stations = model_dir / 'stations.csv'
+
+    files = {
+        'model': model_dir / 'model_torchscript.pt',
+        'preprocessing pipeline': model_dir / 'preprocessing.pickle',
+        'inference config': model_dir / 'inference_config.json',
+    }
 
     assert model_dir.exists(), f'{model_dir} does not exist'
-    assert pytorch_model.exists(), f'{pytorch_model} does not exist in {model_dir}'
-    assert (
-        preprocessing_pipeline.exists()
-    ), f'{preprocessing_pipeline} does not exist in {model_dir}'
-    assert stations.exists(), f'{stations} does not exist in {model_dir}'
 
-    # Upload to model directory in bucket
+    for name, file in files.items():
+        assert file.exists(), f'{name} does not exist in {model_dir}'
 
-    with Console().status('Uploading model'):
-        blob = bucket.blob('model/model_torchscript.pt')
-        blob.upload_from_filename(pytorch_model)
-
-    with Console().status('Uploading preprocessing pipeline'):
-        blob = bucket.blob('model/preprocessing.pickle')
-        blob.upload_from_filename(preprocessing_pipeline)
-
-    with Console().status('Uploading stations'):
-        blob = bucket.blob('model/stations.csv')
-        blob.upload_from_filename(stations)
+    for name, file in files.items():
+        with Console().status(f'Uploading {name}'):
+            blob = bucket.blob(f'model/{file.name}')
+            blob.upload_from_filename(file)
 
 
 if __name__ == '__main__':

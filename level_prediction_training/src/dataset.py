@@ -35,7 +35,7 @@ def load_training_data(
     stations: pl.DataFrame,
     train_split: float = 0.8,
 ):
-    api = HydrologyApi()
+    api = HydrologyApi(cache_max_age=timedelta(weeks=1))
 
     df = api.get_measures(stations, start_date=datetime(2007, 1, 1))
 
@@ -46,23 +46,6 @@ def load_training_data(
     train_records = int(len(df) * train_split)
 
     return df.slice(0, train_records), df.slice(train_records)
-
-
-def load_inference_data(
-    stations: pl.DataFrame,
-    sequence_length: int,
-):
-    api = HydrologyApi()
-
-    df = api.get_measures(
-        stations, start_date=datetime.now() - timedelta(minutes=15 * sequence_length)
-    )
-
-    assert len(df) >= sequence_length
-
-    return pl.concat(
-        [df, calculate_time_features(df['dateTime'])], how='horizontal'
-    ).head(sequence_length)
 
 
 class TimeSeriesDataset(Dataset):

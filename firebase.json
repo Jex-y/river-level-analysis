@@ -3,6 +3,7 @@
     {
       "source": "level_prediction_inference",
       "codebase": "level_prediction",
+      "runtime": "python311",
       "ignore": [
         ".inference-venv",
         ".git",

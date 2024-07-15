@@ -29,6 +29,7 @@ from src.quantile_loss import quantile_loss
 from src.ts_mixer import TSMixer
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
+import json
 
 os.environ['WANDB_SILENT'] = 'true'
 
@@ -58,7 +59,7 @@ def main(config: Config):
     log.info(f'Using seed: {seed}')
     torch.manual_seed(seed)
 
-    stations = pl.read_csv(config.stations_filepath)
+    stations = pl.read_json(config.stations_filepath)
 
     config.model_save_dir = Path(config.model_save_dir)
 
@@ -149,7 +150,7 @@ def main(config: Config):
         f'Model has {sum(p.numel() for p in model.parameters() if p.requires_grad)} trainable parameters'
     )
 
-    optim = AdamW(model.parameters(), lr=config.lr)
+    optim = AdamW(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
 
     quantiles = torch.tensor(config.quantiles, device=device)
     train_metrics = torch.zeros(len(quantiles) + 2, device=device)
@@ -282,13 +283,22 @@ def main(config: Config):
         preprocessing_file_path, name='preprocessing_pipeline', type='model'
     )
 
-    stations_file_path = model_dir / 'stations.csv'
+    inference_config_file_path = model_dir / 'inference_config.json'
 
-    log.info(f'Saving stations to {stations_file_path}')
+    inference_config = dict(
+        prediction_length=config.prediction_length,
+        context_length=config.context_length,
+        quantiles=list(config.quantiles),
+        target_col=config.target_col,
+        stations=stations.to_dict(as_series=False),
+    )
 
-    stations.write_csv(stations_file_path)
+    with open(inference_config_file_path, 'w') as f:
+        json.dump(inference_config, f)
 
-    wandb.log_artifact(stations_file_path, name='stations', type='dataset')
+    wandb.log_artifact(
+        inference_config_file_path, name='inference_config', type='config'
+    )
 
     wandb.finish()
 

@@ -6,6 +6,7 @@ wandb/
 data.parquet
 *.pem
 **_logs/
+*.log
 
 firebase-service-account-key.json
 
