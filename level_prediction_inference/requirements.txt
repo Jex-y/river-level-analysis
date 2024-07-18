@@ -1,5 +1,5 @@
 firebase_functions~=0.1.0
-hydrology==3.0.1
+hydrology==4.0.1
 numpy==1.26.4
 pandas==2.2.2
 polars==1.1.0

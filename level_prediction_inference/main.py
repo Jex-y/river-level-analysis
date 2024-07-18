@@ -1,27 +1,13 @@
+import asyncio
 import json
+import logging
 import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+import polars as pl
 from firebase_admin import initialize_app, storage
-from firebase_functions import scheduler_fn
-import logging
-import asyncio
-
-
-# Some imports are conditional to improve compute time efficiency when prediction is not required.
-
-# try:
-#     from google.auth import default as default_auth
-
-#     creds, _ = default_auth()
-# except:
-#     from firebase_admin import credentials
-#     from pathlib import Path
-
-#     creds = credentials.Certificate(
-#         Path(__file__).parent / '../firebase-service-account-key.json'
-#     )
+from firebase_functions import options, scheduler_fn
 
 initialize_app(options={'storageBucket': 'durham-river-level.appspot.com'})
 logging.basicConfig(
@@ -35,6 +21,7 @@ class Config:
     prediction_length: int
     target_col: str
     quantiles: list
+    predict_difference: bool
 
 
 @dataclass
@@ -71,7 +58,7 @@ async def upload_blob_string(blob, data: bytes, content_type=None):
     )
 
 
-async def load_model():
+async def load_model() -> tuple:
     logging.info('Loading dependencies for model loading')
 
     from io import BytesIO
@@ -99,7 +86,7 @@ async def load_model():
     return model, preprocessing['X'], preprocessing['y']
 
 
-async def load_config():
+async def load_config() -> tuple[Config, pl.DataFrame]:
     logging.info('Loading config from bucket')
     from polars import DataFrame
 
@@ -116,7 +103,7 @@ async def load_config():
     return config, stations
 
 
-async def load_prev_metadata():
+async def load_prev_metadata() -> Metadata:
     logging.info('Loading previous metadata from bucket')
 
     bucket = storage.bucket()
@@ -137,13 +124,23 @@ async def save_metadata(metadata: Metadata):
     await upload_blob_string(blob, metadata.to_json(), content_type='application/json')
 
 
-async def save_prediction(prediction):
+async def save_prediction(prediction: pl.DataFrame):
     logging.info('Saving prediction to bucket')
 
     bucket = storage.bucket()
     blob = bucket.blob('prediction/prediction.json')
     await upload_blob_string(
-        blob, json.dumps(prediction), content_type='application/json'
+        blob, prediction.write_json(), content_type='application/json'
+    )
+
+
+async def save_observation(observation: pl.DataFrame):
+    logging.info('Saving observation to bucket')
+
+    bucket = storage.bucket()
+    blob = bucket.blob('prediction/observation.json')
+    await upload_blob_string(
+        blob, observation.write_json(), content_type='application/json'
     )
 
 
@@ -173,101 +170,110 @@ def calculate_time_features(
     )
 
 
-async def predict(df, config: Config):
+async def predict(df: pl.DataFrame, config: Config) -> pl.DataFrame:
     logging.info('Loading dependencies for prediction')
     from torch import tensor
+
+    df = df.tail(config.context_length)
+    df = pl.concat([df, calculate_time_features(df['dateTime'])], how='horizontal')
 
     model, X_preprocessing, y_preprocessing = await load_model()
 
     X = df.tail(config.context_length).drop('dateTime').to_pandas().astype('float32')
     X = tensor(X_preprocessing.transform(X)).unsqueeze(0)
 
-    logging.info('Making prediction')
-
     assert X.shape[1] == config.context_length
+
+    logging.info('Making prediction')
 
     y_pred = model(X).detach().numpy().reshape(-1, 1)
     y_pred = y_preprocessing.inverse_transform(y_pred).reshape(
         config.prediction_length, len(config.quantiles)
     )
 
-    assert config.quantiles[1] == 0.5
+    if config.predict_difference:
+        last_value = df[config.target_col][-1]
+        y_pred = y_pred.cumsum(axis=0) + last_value
 
-    # Predictions are at 15 minute intervals, starting from the last time in the input data
-    y_pred_datetime = [
-        df['dateTime'].max() + timedelta(minutes=15 * (i + 1))
-        for i in range(config.prediction_length)
-    ]
+    last_observed = df['dateTime'].max()
 
-    return [
-        {'timestamp': dateTime.isoformat(), 'value': float(value), 'type': 'observed'}
-        for dateTime, value in df[['dateTime', config.target_col]].iter_rows()
-    ] + [
-        {
-            'timestamp': dateTime.isoformat(),
-            'value': float(values[1]),
-            'type': 'predicted',
-            'ci': [float(values[0]), float(values[2])],
-        }
-        for dateTime, values in zip(y_pred_datetime, y_pred)
-    ]
-
-
-async def predict_if_new_data():
-    logging.info('Checking if new data is available')
-    prev_metadata = await load_prev_metadata()
-
-    # If the previous last observation was less than 15 minutes ago, return
-    if prev_metadata and prev_metadata.last_observation > datetime.now() - timedelta(
-        minutes=15
-    ):
-        logging.info(
-            'No new data available, last observation was less than 15 minutes ago'
+    return pl.DataFrame(
+        {f'value {q:.2f}': y_pred[:, i] for i, q in enumerate(config.quantiles)}
+    ).with_columns(
+        pl.lit('predicted').alias('type'),
+        pl.datetime_range(
+            last_observed,
+            last_observed + timedelta(minutes=15 * config.prediction_length),
+            interval='15m',
+            closed='right',
         )
-        return
+        .dt.replace_time_zone('UTC')
+        .alias('timestamp'),
+    )
 
+
+async def load_dataframe(config: Config, stations: pl.DataFrame):
+    import httpx
     from hydrology import FloodingApi
 
-    api = FloodingApi()
-    config, stations = await load_config()
+    async with httpx.AsyncClient(timeout=httpx.Timeout(5)) as http_client:
+        api = FloodingApi(http_client)
 
-    # Might want to change this to return more data if the context length is short
+        # Might want to change this to return more data if the context length is short
 
-    import polars as pl
-
-    df = (
-        (
-            await api.get_last_n_measures(
-                stations,
-                config.context_length + 4,  # Allow for up to an hours delay in data
+        df = (
+            (
+                await api.get_last_n_measures(
+                    stations,
+                    min(config.context_length + 4, 24 * 4),
+                )
             )
+            .drop_nulls(subset=config.target_col)
+            .with_columns(pl.exclude(config.target_col).forward_fill())
         )
-        .drop_nulls(subset=config.target_col)
-        .with_columns(pl.exclude(config.target_col).forward_fill())
-    )
 
     # Assert there are no nulls in the target column
     assert df[config.target_col].is_not_null().all(), 'Null values in target colum'
 
-    latest_observation = df['dateTime'].max()
+    return df
+
+
+async def run_inference(check_for_new_data: bool):
+    logging.info('Loading config')
+
+    prev_metadata = await load_prev_metadata()
+    config, stations = await load_config()
+
+    logging.info('Loading data')
+    df = await load_dataframe(config, stations)
 
     # If the current last observation is within some threshold of the previous last observation, return
 
-    if prev_metadata and latest_observation == prev_metadata.last_observation:
+    latest_observation = df['dateTime'].max()
+    if (
+        check_for_new_data
+        and prev_metadata
+        and latest_observation == prev_metadata.last_observation
+    ):
         logging.info('No new data available, last observation was over 15 minutes ago')
         return
 
     # Otherwise, make a prediction
-    logging.info('New data available, making prediction')
+    logging.info('Running model forward pass')
 
     # This blocks the main thread, but we should only be running the function once at a time so not an issue.
 
-    df = pl.concat([df, calculate_time_features(df['dateTime'])], how='horizontal')
-
-    prediction = await predict(df.tail(config.context_length), config)
+    prediction = await predict(df, config)
 
     await asyncio.gather(
         save_prediction(prediction),
+        save_observation(
+            df.tail(24 * 4).select(
+                pl.col('dateTime').dt.replace_time_zone('UTC'),
+                pl.lit('observed').alias('type'),
+                pl.col(config.target_col).alias('value'),
+            )
+        ),
         save_metadata(
             Metadata(
                 latest_observation,
@@ -277,6 +283,12 @@ async def predict_if_new_data():
     )
 
 
-@scheduler_fn.on_schedule(schedule='*/5 * * * *', region='europe-west2')
+@scheduler_fn.on_schedule(
+    schedule='*/5 * * * *', region='europe-west2', memory=options.MemoryOption.GB_1
+)
 def level_prediction_inference(_event):
-    asyncio.run(predict_if_new_data())
+    asyncio.run(run_inference(check_for_new_data=True))
+
+
+if __name__ == '__main__':
+    asyncio.run(run_inference(check_for_new_data=False))
