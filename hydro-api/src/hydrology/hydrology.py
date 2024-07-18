@@ -1,13 +1,15 @@
-from enum import Enum
-from .dataframe_api import DataFrameApi
 from datetime import datetime, timedelta
+from enum import Enum
 from io import StringIO
-import httpx
-import polars as pl
+from logging import getLogger
 from time import sleep
 from typing import Tuple
+
+import httpx
+import polars as pl
+
+from .dataframe_api import DataFrameApi
 from .models import Parameter, ParameterEnumPolars
-from logging import getLogger
 from .utils import remove_none
 
 logger = getLogger('hydrology')
@@ -19,8 +21,11 @@ class HydrologyApi(DataFrameApi):
     API documentation: https://environment.data.gov.uk/hydrology/doc/reference
     """
 
-    def __init__(self, cache_max_age: timedelta = timedelta(minutes=1)):
+    def __init__(
+        self, http_client: httpx.Client, cache_max_age: timedelta = timedelta(minutes=1)
+    ):
         super().__init__(
+            http_client=http_client,
             api_base_url=httpx.URL('https://environment.data.gov.uk/hydrology/'),
             cache_max_age=cache_max_age,
         )

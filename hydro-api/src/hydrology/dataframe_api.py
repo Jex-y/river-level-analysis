@@ -1,12 +1,13 @@
-from hashlib import sha256
-from pathlib import Path
+import logging
 from abc import ABC
 from datetime import datetime, timedelta
-import httpx
-from typing import Callable
-import polars as pl
+from hashlib import sha256
 from io import StringIO
-import logging
+from pathlib import Path
+from typing import Callable
+
+import httpx
+import polars as pl
 
 __all__ = ['DataFrameApi']
 
@@ -22,18 +23,15 @@ class DataFrameApi(ABC):
 
     def __init__(
         self,
+        http_client: httpx.Client,
         api_base_url: httpx.URL,
         cache_dir: Path = Path('./.cache'),
-        cache_max_age: timedelta = timedelta(minutes=1),
-        http_client: httpx.Client = httpx.Client(),
+        cache_max_age: timedelta | None = None,
     ):
         self.api_base_url = api_base_url
         self.cache_dir = cache_dir
         self.cache_max_age = cache_max_age
         self.http_client = http_client
-
-    def __del__(self):
-        self.http_client.close()
 
     @staticmethod
     def _cache_dataframe_load(
@@ -53,7 +51,10 @@ class DataFrameApi(ABC):
 
             if filepath.exists():
                 last_modified = datetime.fromtimestamp(filepath.stat().st_mtime)
-                if last_modified + self.cache_max_age > datetime.now():
+                if (
+                    self.cache_max_age is None
+                    or last_modified + self.cache_max_age > datetime.now()
+                ):
                     log.info('Loading response from cache')
                     return pl.scan_parquet(filepath)
                 else:

@@ -1,12 +1,12 @@
+import asyncio
+from io import StringIO
+
+import httpx
+import polars as pl
+
 from .dataframe_api import DataFrameApi
 from .models import Parameter
-
-from datetime import datetime
-import polars as pl
-import httpx
 from .utils import remove_none
-from io import StringIO
-import asyncio
 
 
 class FloodingApi(DataFrameApi):
@@ -18,14 +18,11 @@ class FloodingApi(DataFrameApi):
 
     http_client: httpx.AsyncClient
 
-    def __init__(self):
+    def __init__(self, http_client: httpx.AsyncClient):
         super().__init__(
+            http_client,
             api_base_url=httpx.URL('https://environment.data.gov.uk/flood-monitoring/'),
-            http_client=httpx.AsyncClient(),
         )
-        
-    async def __del__(self):
-        await self.http_client.aclose()
 
     async def get_stations(
         self,
@@ -99,34 +96,12 @@ class FloodingApi(DataFrameApi):
         )
 
         df = self._parse_response(response).select(
-            pl.col('dateTime').cast(pl.Datetime), pl.col('value').cast(pl.Float32)
+            pl.col('dateTime').cast(pl.Datetime).dt.replace_time_zone('UTC'),
+            pl.col('value').cast(pl.Float32),
         )
 
         assert len(df) == n, f'Expected {n} rows, got {len(df)}'
         return df
-
-    async def get_latest_observation_timestamp(
-        self,
-        station_notation: str,
-        parameter: Parameter,
-    ) -> datetime:
-        response = await self.http_client.get(
-            self.api_base_url.join(
-                f'id/measures/{self._encode_measure(station_notation, parameter)}/readings'
-            ),
-            params={
-                'latest': None,
-            },
-            headers={'Accept': 'application/json'},
-        )
-
-        response.raise_for_status()
-        datetime_string = response.json()['items'][0][
-            'dateTime'
-        ]  # Like 2024-07-15T13:30:00Z
-
-        # If we are running in python 3.11, fromisoformat should handle the Z
-        return datetime.fromisoformat(datetime_string)
 
     async def get_last_n_measures(
         self,

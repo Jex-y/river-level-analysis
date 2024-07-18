@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hydrology"
-version = "3.0.3"
+version = "4.0.1"
 description = "Load data from the UK Hydology API"
 readme = "README.md"
 authors = [{ name = "Edward Jex", email = "edwardjex@live.co.uk" }]
@@ -26,5 +26,34 @@ keywords = [
     "Rain",
     "Weather",
 ]
-dependencies = ["polars", "httpx"]
+dependencies = ["polars[timezone]", "httpx"]
 requires-python = ">=3.10"
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-asyncio", "pytest-httpx"]
+dev = ["ruff"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+target-version = "py310"
+
+[tool.ruff.lint]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
