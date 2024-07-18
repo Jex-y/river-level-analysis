@@ -23,6 +23,9 @@ class FloodingApi(DataFrameApi):
             api_base_url=httpx.URL('https://environment.data.gov.uk/flood-monitoring/'),
             http_client=httpx.AsyncClient(),
         )
+        
+    async def __del__(self):
+        await self.http_client.aclose()
 
     async def get_stations(
         self,
