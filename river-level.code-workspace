@@ -1,0 +1,39 @@
+{
+	"folders": [
+		{
+			"path": "dashboard"
+		},
+		{
+			"path": "level_prediction_training"
+		},
+		{
+			"path": "level_prediction_inference"
+		},
+		{
+			"path": "hydro-api"
+		},
+		{
+			"path": "data_collection"
+		}
+	],
+	"settings": {
+		"editor.formatOnType": true,
+		"notebook.formatOnCellExecution": true,
+		"notebook.formatOnSave.enabled": true,
+		"editor.formatOnSave": true,
+		"ruff.organizeImports": true,
+		"editor.codeActionsOnSave": {
+
+		},
+		"[python]": {
+			"editor.formatOnSave": true,
+			"editor.codeActionsOnSave": {
+				"source.fixAll": "explicit",
+				"source.organizeImports": "explicit"
+			}
+		},
+		"cSpell.words": [
+			"astro"
+		],
+	}
+}
