@@ -32,8 +32,8 @@ class DataFrameApi(ABC):
         self.cache_max_age = cache_max_age
         self.http_client = http_client
 
-    # def __del__(self):
-    # self.http_client.close()
+    def __del__(self):
+        self.http_client.close()
 
     @staticmethod
     def _cache_dataframe_load(
