@@ -1,0 +1,68 @@
+---
+import Layout from "../layouts/Layout.astro";
+import "@/styles/global.css";
+import Dashboard from "@/components/Dashboard.astro";
+---
+
+<script is:inline>
+  const getThemePreference = () => {
+    if (typeof localStorage !== "undefined" && localStorage.getItem("theme")) {
+      return localStorage.getItem("theme");
+    }
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  };
+  const isDark = getThemePreference() === "dark";
+  document.documentElement.classList[isDark ? "add" : "remove"]("dark");
+
+  if (typeof localStorage !== "undefined") {
+    const observer = new MutationObserver(() => {
+      const isDark = document.documentElement.classList.contains("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  }
+</script>
+
+<script>
+  import {
+    levelForecastStore,
+    levelObservationStore,
+    weatherForecastStore,
+  } from "@/store";
+
+  fetch("/api/data")
+    .then((res) => res.json())
+    .then(({ levelForecast, levelObservation, weatherForecast }) => {
+      levelForecastStore.set(levelForecast);
+      levelObservationStore.set(levelObservation);
+      weatherForecastStore.set(
+        weatherForecast.map((forecast: any) => ({
+          ...forecast,
+          date: new Date(forecast.date),
+        }))
+      );
+    });
+</script>
+
+<Layout title="Welcome to Astro.">
+  <main>
+    <!-- Under construction banner -->
+    <div class="bg-secondary p-4 mb-4 text-center rounded-sm">
+      <span class="font-bold text-lg text-secondary-foreground">
+        🚧 This service is still a work in progress. Please do not rely on any
+        data from it! 🚧
+      </span>
+    </div>
+    <div class="min-h-screen
+            bg-background">
+      <div class="container px-2 mx-auto">
+        <Dashboard />
+      </div>
+    </div>
+  </main>
+</Layout>

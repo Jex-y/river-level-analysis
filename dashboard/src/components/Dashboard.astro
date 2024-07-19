@@ -1,0 +1,29 @@
+---
+import { LevelGraph } from "@/components/levelChart";
+
+import { Parameter } from "@/components/parameter";
+import type { Parameters } from "@/lib/parametersConfig";
+
+const dashboardParameters: (keyof Parameters)[] = [
+  "riverLevel",
+  "windSpeed",
+  "windGust",
+  "temperature",
+  "temperatureApparent",
+  "uvIndex",
+  "visibility",
+];
+---
+
+<div class="grid grid-cols-6 md:grid-cols-8 gap-2 grid-flow-row-dense">
+  <div class="col-span-6 row-span-6">
+    <LevelGraph client:load />
+  </div>
+  {
+    dashboardParameters.map((parameter) => (
+      <div class="col-span-2 lg:col-span-1 h-full">
+        <Parameter name={parameter} client:load />
+      </div>
+    ))
+  }
+</div>
