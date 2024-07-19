@@ -1,15 +1,29 @@
 {
   "functions": [
     {
+      "source": "data_collection",
+      "codebase": "data_collection",
+      "runtime": "python312",
+      "ignore": [
+        "venv",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local",
+        "pytest.ini"
+      ]
+    },
+    {
       "source": "level_prediction_inference",
       "codebase": "level_prediction",
       "runtime": "python311",
       "ignore": [
-        ".inference-venv",
+        "venv",
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",
-        "*.local"
+        "*.local",
+        ".cache"
       ]
     }
   ]

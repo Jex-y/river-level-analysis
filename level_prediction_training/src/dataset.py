@@ -1,9 +1,10 @@
 import math
 from datetime import datetime, timedelta
 
+import httpx
 import polars as pl
+import torch
 from hydrology import HydrologyApi
-import numpy as np
 from torch.utils.data import Dataset
 
 
@@ -35,9 +36,10 @@ def load_training_data(
     stations: pl.DataFrame,
     train_split: float = 0.8,
 ):
-    api = HydrologyApi(cache_max_age=timedelta(weeks=1))
+    with httpx.Client() as http_client:
+        api = HydrologyApi(http_client, cache_max_age=timedelta(weeks=1))
 
-    df = api.get_measures(stations, start_date=datetime(2007, 1, 1))
+        df = api.get_measures(stations, start_date=datetime(2007, 1, 1))
 
     df = pl.concat(
         [df, calculate_time_features(df['dateTime'])], how='horizontal'
@@ -51,8 +53,8 @@ def load_training_data(
 class TimeSeriesDataset(Dataset):
     def __init__(
         self,
-        X: np.array,
-        y: np.array,
+        X: torch.Tensor,
+        y: torch.Tensor,
         seq_length: int,
         pred_length: int,
     ):

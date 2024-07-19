@@ -5,12 +5,13 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 
-class TimeBatchNorm2d(nn.BatchNorm1d):
+def swap_time_features(x):
+    return x.permute(0, 2, 1)
+
+
+class TimeBatchNorm2d(nn.Module):
     """A batch normalization layer that normalizes over the last two dimensions of a
     sequence in PyTorch, mimicking Keras behavior.
-
-    This class extends nn.BatchNorm1d to apply batch normalization across time and
-    feature dimensions.
 
     Attributes:
         num_time_steps (int): Number of time steps in the input.
@@ -24,8 +25,11 @@ class TimeBatchNorm2d(nn.BatchNorm1d):
             normalized_shape (tuple[int, int]): A tuple (num_time_steps, num_channels)
                 representing the shape of the time and feature dimensions to normalize.
         """
+        super().__init__()
+
         num_time_steps, num_channels = normalized_shape
-        super().__init__(num_channels * num_time_steps)
+
+        self.batch_norm = nn.BatchNorm1d(num_time_steps * num_channels)
         self.num_time_steps = num_time_steps
         self.num_channels = num_channels
 
@@ -44,14 +48,14 @@ class TimeBatchNorm2d(nn.BatchNorm1d):
         """
         if x.ndim != 3:
             raise ValueError(
-                f'Expected 3D input tensor, but got {x.ndim}D tensor instead.'
+                f"Expected 3D input tensor, but got {x.ndim}D tensor instead."
             )
 
         # Reshaping input to combine time and feature dimensions for normalization
         x = x.reshape(x.shape[0], -1, 1)
 
         # Applying batch normalization
-        x = super().forward(x)
+        x = self.batch_norm(x)
 
         # Reshaping back to original dimensions (N, S, C)
         x = x.reshape(x.shape[0], self.num_time_steps, self.num_channels)
@@ -175,13 +179,10 @@ class TimeMixing(nn.Module):
         Returns:
             The normalized output tensor after time mixing transformations.
         """
-        x_temp = feature_to_time(
-            x
-        )  # Convert feature maps to time dimension. Assumes definition elsewhere.
+        x_temp = swap_time_features(x)
         x_temp = self.activation_fn(self.fc1(x_temp))
         x_temp = self.dropout(x_temp)
-        x_res = time_to_feature(x_temp)  # Convert back from time to feature maps.
-
+        x_res = swap_time_features(x_temp)
         return self.norm(
             x + x_res
         )  # Apply normalization and combine with original input.
@@ -318,14 +319,6 @@ class ConditionalMixerLayer(nn.Module):
         return x
 
 
-def time_to_feature(x: torch.Tensor) -> torch.Tensor:
-    """Converts a time series tensor to a feature tensor."""
-    return x.permute(0, 2, 1)
-
-
-feature_to_time = time_to_feature
-
-
 class TSMixer(nn.Module):
     """TSMixer model for time series forecasting.
 
@@ -356,24 +349,27 @@ class TSMixer(nn.Module):
         prediction_length: int,
         input_channels: int,
         output_channels: int = None,
-        activation_fn: str = 'relu',
+        activation_fn: str = "relu",
         num_blocks: int = 2,
         dropout: float = 0.1,
         ff_dim: int = 64,
         normalize_before: bool = True,
-        norm_type: str = 'batch',
+        norm_type: str = "batch",
+        predict_difference: bool = False,
     ):
         super().__init__()
+
+        self.predict_difference = predict_difference
 
         # Transform activation_fn to callable
         activation_fn = getattr(F, activation_fn)
 
         # Transform norm_type to callable
         assert norm_type in {
-            'batch',
-            'layer',
-        }, f'Invalid norm_type: {norm_type}, must be one of batch, layer.'
-        norm_type = TimeBatchNorm2d if norm_type == 'batch' else nn.LayerNorm
+            "batch",
+            "layer",
+        }, f"Invalid norm_type: {norm_type}, must be one of batch, layer."
+        norm_type = TimeBatchNorm2d if norm_type == "batch" else nn.LayerNorm
 
         # Build mixer layers
         self.mixer_layers = self._build_mixer(
@@ -430,8 +426,7 @@ class TSMixer(nn.Module):
             torch.Tensor: The output tensor after processing by the model.
         """
         x = self.mixer_layers(x_hist)
-
-        x_temp = feature_to_time(x)
+        x_temp = swap_time_features(x)
         x_temp = self.temporal_projection(x_temp)
-        x = time_to_feature(x_temp)
+        x = swap_time_features(x_temp)
         return x

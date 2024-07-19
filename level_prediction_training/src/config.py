@@ -14,6 +14,7 @@ class Config:
     quantiles: list[float]
     target_col: str
     train_split: float
+    predict_difference: bool
 
     activation_function: str
     num_blocks: int
