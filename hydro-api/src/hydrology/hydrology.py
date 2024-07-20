@@ -155,7 +155,7 @@ class HydrologyApi(DataFrameApi):
         result.raise_for_status()
         return pl.read_csv(
             StringIO(result.text),
-            columns=['hydrology_api_notation', 'label', 'RLOIid', 'lat', 'long'],
+            columns=['notation', 'label', 'RLOIid', 'lat', 'long'],
             schema_overrides={
                 'RLOIid': pl.Utf8,  # Sometimes gets interpreted as an int
             },

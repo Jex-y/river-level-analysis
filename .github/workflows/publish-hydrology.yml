@@ -12,7 +12,7 @@ on:
   push:
     paths:
       - "hydro-api/**"
-      - ".github/workflows/**"
+      - ".github/workflows/publish-hydrology.yml"
 defaults:
   run:
     working-directory: ./hydro-api
