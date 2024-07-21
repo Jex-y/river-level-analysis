@@ -16,11 +16,7 @@ db = None
 def get_client():
     global client
     if client is None:
-        # client = MongoClient(db_uri.value, server_api=ServerApi('1'))
-        client = MongoClient(
-            "mongodb+srv://data-collection:FIvx0EFGFkW0s0ql@riverdata.mtspjxg.mongodb.net/?retryWrites=true&w=majority&appName=RiverData",
-            server_api=ServerApi("1"),
-        )
+        client = MongoClient(db_uri.value, server_api=ServerApi("1"))
     return client
 
 
