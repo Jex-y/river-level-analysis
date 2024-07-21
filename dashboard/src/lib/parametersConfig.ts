@@ -5,7 +5,6 @@ export enum ParameterStatus {
 	Good = 'Good',
 	Warning = 'Warning',
 	Bad = 'Bad',
-	Unknown = 'Unknown',
 }
 
 // TODO: Implement sunrise and sunset

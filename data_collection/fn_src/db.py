@@ -1,12 +1,13 @@
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
-from firebase_functions.params import StringParam
-from bson.codec_options import CodecOptions
 from datetime import UTC
 
-__all__ = ['get_spills_collection', 'get_weather_forecasts_collection']
+from bson.codec_options import CodecOptions
+from firebase_functions.params import StringParam
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 
-db_uri = StringParam('DB_URI')
+__all__ = ["get_spills_collection", "get_weather_forecasts_collection"]
+
+db_uri = StringParam("DB_URI")
 
 client = None
 db = None
@@ -15,24 +16,28 @@ db = None
 def get_client():
     global client
     if client is None:
-        client = MongoClient(db_uri.value, server_api=ServerApi('1'))
+        # client = MongoClient(db_uri.value, server_api=ServerApi('1'))
+        client = MongoClient(
+            "mongodb+srv://data-collection:FIvx0EFGFkW0s0ql@riverdata.mtspjxg.mongodb.net/?retryWrites=true&w=majority&appName=RiverData",
+            server_api=ServerApi("1"),
+        )
     return client
 
 
 def get_db():
     global db
     if db is None:
-        db = get_client()['riverdata']
+        db = get_client()["riverdata"]
     return db
 
 
 def get_spills_collection():
-    return get_db()['spills'].with_options(
+    return get_db()["spills"].with_options(
         codec_options=CodecOptions(tz_aware=True, tzinfo=UTC)
     )
 
 
 def get_weather_forecasts_collection():
-    return get_db()['weather-forecasts'].with_options(
+    return get_db()["weather-forecasts"].with_options(
         codec_options=CodecOptions(tz_aware=True, tzinfo=UTC)
     )

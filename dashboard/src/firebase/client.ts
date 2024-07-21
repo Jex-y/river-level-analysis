@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { type FirebaseOptions, initializeApp } from 'firebase/app';
 
 const firebaseConfig = {
 	apiKey: 'AIzaSyDQTqkop4ZrY8rt6pmvteI-hPaekfS9Rq8',
@@ -8,6 +8,6 @@ const firebaseConfig = {
 	messagingSenderId: '506521835992',
 	appId: '1:506521835992:web:0bf929d49c712afdd53aad',
 	measurementId: 'G-0ND87X80YC',
-};
+} satisfies FirebaseOptions;
 
 export const app = initializeApp(firebaseConfig);

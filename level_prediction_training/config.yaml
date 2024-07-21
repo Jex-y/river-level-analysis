@@ -1,7 +1,7 @@
 seed: null
 prediction_length: 32
 context_length: 48
-train_epochs: 40
+train_epochs: 50
 quantiles: [0.05, 0.95]
 train_split: 0.85
 model_save_dir: ./models

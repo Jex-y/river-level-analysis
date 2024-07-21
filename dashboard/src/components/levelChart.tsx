@@ -28,7 +28,7 @@ const chartConfig = {
   },
   predicted: {
     label: "Predicted",
-    color: "hsl(var(--chart-1))",
+    color: "hsl(var(--chart-4))",
   },
   ci: {
     label: "CI",
@@ -42,43 +42,52 @@ export const LevelGraph: FC = () => {
   const forecastRiverLevel = useStore(levelForecastStore);
 
   useEffect(() => {
-    if (observedRiverLevel && forecastRiverLevel) {
-      const firstPredicted = forecastRiverLevel[0];
+    let result: RiverLevel[] = []
 
-      setChartData([
-        ...observedRiverLevel,
-        {
+    if (observedRiverLevel !== 'loading') {
+      result = observedRiverLevel;
+    }
+
+    if (forecastRiverLevel !== 'loading') {
+
+      if (observedRiverLevel !== 'loading') {
+        const firstPredicted = forecastRiverLevel[0];
+
+        result.push({
           timestamp: firstPredicted.timestamp,
           observed: firstPredicted.predicted,
-        },
-        ...forecastRiverLevel
-      ]);
+        });
+      }
+
+      result = [...result, ...forecastRiverLevel];
     }
+
+    setChartData(result);
   }, [observedRiverLevel, forecastRiverLevel]);
 
 
   const onMobile = useMediaQuery({ query: "(max-width: 768px)" });
 
   return (
-    <Card className="h-full" >
+    <Card>
       <CardHeader className="flex-row items-center justify-between p-4">
         <CardTitle>River Level</CardTitle>
         <CardDescription>
           Durham New Elvet Bridge
         </CardDescription>
       </CardHeader>
-      <CardContent className='pl-0 pr-2'>
-        <ChartContainer config={chartConfig} className="w-full">
+      <CardContent>
+        <ChartContainer config={chartConfig} className="aspect-auto h-[16rem] w-full">
           <AreaChart
             accessibilityLayer
             data={chartData}
           >
-            <CartesianGrid vertical={true} />
+            <CartesianGrid vertical={false} />
             <XAxis
               dataKey="timestamp"
               tickLine={true}
-              axisLine={true}
-              tickMargin={8}
+              axisLine={false}
+              tickMargin={4}
               tickFormatter={(datetime) =>
                 new Date(datetime / 1000).toLocaleTimeString("en-GB", {
                   weekday: "short",
@@ -91,9 +100,8 @@ export const LevelGraph: FC = () => {
               domain={['auto', 'auto']}
             />
             <YAxis
-              tickLine={true}
-              axisLine={true}
-              tickMargin={onMobile ? 4 : 8}
+              tickLine={false}
+              axisLine={false}
               tickFormatter={(value) => value.toFixed(onMobile ? 1 : 2)}
               unit={' m'}
               domain={[
@@ -110,7 +118,7 @@ export const LevelGraph: FC = () => {
                 <stop
                   offset="5%"
                   stopColor="var(--color-observed)"
-                  stopOpacity={0.8}
+                  stopOpacity={0.6}
                 />
                 <stop
                   offset="95%"
@@ -122,7 +130,7 @@ export const LevelGraph: FC = () => {
                 <stop
                   offset="5%"
                   stopColor="var(--color-predicted)"
-                  stopOpacity={0.8}
+                  stopOpacity={0.6}
                 />
                 <stop
                   offset="95%"
@@ -134,7 +142,7 @@ export const LevelGraph: FC = () => {
                 <stop
                   offset="5%"
                   stopColor="var(--color-ci)"
-                  stopOpacity={0.8}
+                  stopOpacity={0.6}
                 />
                 <stop
                   offset="95%"
@@ -147,14 +155,12 @@ export const LevelGraph: FC = () => {
               dataKey="observed"
               type="natural"
               fill="url(#fillObserved)"
-              fillOpacity={0.4}
               stroke="var(--color-observed)"
             />
             <Area
               dataKey="predicted"
               type="natural"
               fill="url(#fillPredicted)"
-              fillOpacity={0.4}
               stroke="var(--color-predicted)"
               strokeDasharray={10}
             />
@@ -162,7 +168,7 @@ export const LevelGraph: FC = () => {
               dataKey="ci"
               type="natural"
               fill="url(#fillCi)"
-              fillOpacity={0.4}
+              // fillOpacity={0.4}
               stroke="var(--color-ci)"
               strokeDasharray={10}
             />

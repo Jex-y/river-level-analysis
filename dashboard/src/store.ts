@@ -6,26 +6,22 @@ import type {
 } from './lib/models';
 import type { Parameters } from './lib/parametersConfig';
 
-// export type Theme = 'light' | 'dark'; // | 'darc';
-
-// export const theme = atom<Theme | null>('light');
-
-export const levelForecastStore = atom<ForecastRiverLevel[] | undefined>(
-	undefined
+export const levelForecastStore = atom<ForecastRiverLevel[] | 'loading'>(
+	'loading'
 );
-export const levelObservationStore = atom<ObservedRiverLevel[] | undefined>(
-	undefined
+export const levelObservationStore = atom<ObservedRiverLevel[] | 'loading'>(
+	'loading'
 );
 
-export const weatherForecastStore = atom<WeatherForecast[] | undefined>(
-	undefined
+export const weatherForecastStore = atom<WeatherForecast[] | 'loading'>(
+	'loading'
 );
 
 export const currentLevelObservationStore = computed(
 	[levelObservationStore],
 	(observed) => {
-		if (observed === undefined) {
-			return undefined;
+		if (observed === 'loading') {
+			return observed;
 		}
 		return observed[observed.length - 1];
 	}
@@ -34,24 +30,24 @@ export const currentLevelObservationStore = computed(
 export const currentWeatherForecastStore = computed(
 	[weatherForecastStore],
 	(weather) => {
-		if (weather === undefined) {
-			return undefined;
+		if (weather === 'loading') {
+			return weather;
 		}
 		return weather[0];
 	}
 );
 
 export const currentConditionsStore = computed<
-	Parameters | undefined,
+	Parameters | 'loading',
 	[
-		ReadableAtom<WeatherForecast | undefined>,
-		ReadableAtom<ObservedRiverLevel | undefined>,
+		ReadableAtom<WeatherForecast | 'loading'>,
+		ReadableAtom<ObservedRiverLevel | 'loading'>,
 	]
 >(
 	[currentWeatherForecastStore, currentLevelObservationStore],
 	(weather, levelObservation) => {
-		if (weather === undefined || levelObservation === undefined) {
-			return undefined;
+		if (weather === 'loading' || levelObservation === 'loading') {
+			return 'loading';
 		}
 
 		return {
@@ -65,19 +61,3 @@ export const currentConditionsStore = computed<
 		} satisfies Parameters;
 	}
 );
-
-// export const currentRiverLevel = computed(
-// 	[currentForecastRiverLevel, currentObservedRiverLevel],
-// 	(forecast, observed) => {
-// 		if (forecast === undefined && observed === undefined) {
-// 			return undefined;
-// 		}
-// 		if (forecast === undefined) {
-// 			return observed;
-// 		}
-// 		if (observed === undefined) {
-// 			return forecast;
-// 		}
-// 		return [...observed, ...forecast] as RiverLevel[];
-// 	}
-// );

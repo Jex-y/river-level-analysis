@@ -1,69 +1,54 @@
-import { CircleAlert, CircleCheck, CircleX } from 'lucide-react';
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ParameterStatus, type Parameters, parameterInfo } from '@/lib/parametersConfig';
+import { type Parameters, parameterInfo } from '@/lib/parametersConfig';
+import { useLazyStore } from '@/lib/useLazyStore';
 import { cn } from '@/lib/utils';
-import { currentConditionsStore, currentWeatherForecastStore } from '@/store';
-import { useStore } from '@nanostores/react';
-import { type FC, useEffect, useState } from 'react';
+import { currentConditionsStore } from '@/store';
+import type { FC } from 'react';
 import { Skeleton } from './ui/skeleton';
 
-
-
-export type ParameterProps = {
-  name: keyof Parameters;
-};
-
 const status_color = {
-  Good: 'text-green-500',
-  Warning: 'text-yellow-500',
-  Bad: 'text-red-500',
+  Good: 'bg-green-500',
+  Warning: 'bg-yellow-500',
+  Bad: 'bg-red-500',
 };
 
-type StatusIconProps = {
-  status: ParameterStatus;
-  className?: string;
-};
-const StatusIcon: FC<StatusIconProps> = ({ status, className }) => {
-  switch (status) {
-    case ParameterStatus.Good:
-      return <CircleCheck className={cn(className, status_color.Good)} />;
-    case ParameterStatus.Warning:
-      return <CircleAlert className={cn(className, status_color.Warning)} />;
-    case ParameterStatus.Bad:
-      return <CircleX className={cn(className, status_color.Bad)} />;
-    case ParameterStatus.Unknown:
-      return <Skeleton className={cn(className, 'rounded-full')} />;
-  }
+export type ParametersReportProps = {
+  show: (keyof Parameters)[]
 };
 
-export const Parameter: FC<ParameterProps> = ({
-  name
-}) => {
-  const { label, formatFn, statusFn, defaultValue, icon: Icon } = parameterInfo[name];
-  const [status, setStatus] = useState<ParameterStatus>(ParameterStatus.Unknown);
-  const value = useStore(currentConditionsStore)?.[name] || defaultValue;
+export const ParametersReport: FC<ParametersReportProps> = ({ show }: ParametersReportProps) => {
+  const { value: conditions, loading } = useLazyStore(currentConditionsStore);
 
-  useEffect(() => {
-    if (value !== undefined) {
-      setStatus(statusFn(value));
-    }
-  }, [value, statusFn]);
 
-  return (
-    <Card className="h-full p-2">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 px-2">
-        <CardTitle className="text-xs lg:text-lg text-nowrap font-light">{label}</CardTitle>
-        <Icon />
-      </CardHeader>
-      <CardContent className="p-2 pt-0">
-        <div className='flex flex-row items-center justify-between'>
-          <div className="text-sm lg:text-lg font-semibold text-nowrap">
-            {value !== undefined ? formatFn(value) : 'N/A'}
+  return <Card className="w-full max-w-sm">
+    <CardHeader>
+      <CardTitle>Conditions</CardTitle>
+    </CardHeader>
+    {show.map((name) => {
+      const { label, formatFn, statusFn, icon: Icon } = parameterInfo[name];
+      const isLoading = loading || !conditions;
+
+      return (
+        <CardContent key={name} className="flex items-center gap-4">
+          <div className="bg-muted rounded-full p-2 flex items-center justify-center shrink-0">
+            <Icon className="w-6 h-6 text-primary" />
           </div>
-          <StatusIcon status={status} className="h-6 w-6 lg:h-8 lg:w-8" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+          <div className="flex-1">
+            {isLoading ? (
+              <Skeleton className="w-40 h-10" />
+            ) : (
+              <div className="text-4xl font-bold">{formatFn(conditions[name])}</div>
+            )}
+            <div className="text-sm text-muted-foreground">{label}</div>
+          </div>
+          {isLoading ? (
+            <Skeleton className="h-3 w-3 rounded-full" />
+          ) : (
+            <div className={cn('h-3 w-3 rounded-full', status_color[statusFn(conditions[name])])} />
+          )}
+        </CardContent >
+      );
+    })
+    }
+  </Card >;
+}

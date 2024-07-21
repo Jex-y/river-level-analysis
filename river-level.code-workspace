@@ -14,6 +14,12 @@
 		},
 		{
 			"path": "data_collection"
+		},
+		{
+			"path": ".github"
+		},
+		{
+			"path": "backend"
 		}
 	],
 	"settings": {

@@ -4,6 +4,7 @@ import logging
 import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from io import BytesIO
 
 import polars as pl
 from firebase_admin import initialize_app, storage
@@ -61,7 +62,6 @@ async def upload_blob_string(blob, data: bytes, content_type=None):
 async def load_model() -> tuple:
     logging.info("Loading dependencies for model loading")
 
-    from io import BytesIO
     from pickle import load as load_pickle
 
     from torch.jit import load as load_torchscript
@@ -77,11 +77,12 @@ async def load_model() -> tuple:
     model_buffer = bucket.blob(f"model/{model_file_name}")
     preprocessing_buffer = bucket.blob(f"model/{preprocessing_file_name}")
 
-    model_buffer = download_blob_bytes(model_buffer)
-    preprocessing_buffer = download_blob_bytes(preprocessing_buffer)
+    [model_buffer, preprocessing_buffer] = await asyncio.gather(
+        download_blob_bytes(model_buffer), download_blob_bytes(preprocessing_buffer)
+    )
 
-    model = load_torchscript(BytesIO(await model_buffer), map_location="cpu")
-    preprocessing = load_pickle(BytesIO(await preprocessing_buffer))
+    model = load_torchscript(BytesIO(model_buffer), map_location="cpu")
+    preprocessing = load_pickle(BytesIO(preprocessing_buffer))
 
     return model, preprocessing["X"], preprocessing["y"]
 
@@ -127,21 +128,41 @@ async def save_metadata(metadata: Metadata):
 async def save_prediction(prediction: pl.DataFrame):
     logging.info("Saving prediction to bucket")
 
-    bucket = storage.bucket()
-    blob = bucket.blob("prediction/prediction.json")
-    await upload_blob_string(
-        blob, prediction.write_json(), content_type="application/json"
+    # bucket = storage.bucket()
+    # blob = bucket.blob("prediction/prediction.json")
+    # await upload_blob_string(
+    #     blob, prediction.write_json(), content_type="application/json"
+    # )
+
+    blob = storage.bucket().blob("prediction/prediction.json")
+
+    await asyncio.to_thread(
+        blob.upload_from_string,
+        prediction.write_json(),
     )
+
+    await asyncio.to_thread(
+        blob.make_public,
+    )
+
+    logging.info(f"Uploaded prediction to {blob.public_url}")
 
 
 async def save_observation(observation: pl.DataFrame):
     logging.info("Saving observation to bucket")
 
-    bucket = storage.bucket()
-    blob = bucket.blob("prediction/observation.json")
-    await upload_blob_string(
-        blob, observation.write_json(), content_type="application/json"
+    blob = storage.bucket().blob("prediction/observation.json")
+
+    await asyncio.to_thread(
+        blob.upload_from_string,
+        observation.write_json(),
     )
+
+    await asyncio.to_thread(
+        blob.make_public,
+    )
+
+    logging.info(f"Uploaded observation to {blob.public_url}")
 
 
 def calculate_time_features(
@@ -262,9 +283,6 @@ async def run_inference(check_for_new_data: bool):
     ):
         logging.info("No new data available, last observation was over 15 minutes ago")
         return
-
-    # Otherwise, make a prediction
-    logging.info("Running model forward pass")
 
     # This blocks the main thread, but we should only be running the function once at a time so not an issue.
 

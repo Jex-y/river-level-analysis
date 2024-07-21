@@ -35,22 +35,34 @@ import Dashboard from "@/components/Dashboard.astro";
     weatherForecastStore,
   } from "@/store";
 
-  fetch("/api/data")
-    .then((res) => res.json())
-    .then(({ levelForecast, levelObservation, weatherForecast }) => {
-      levelForecastStore.set(levelForecast);
-      levelObservationStore.set(levelObservation);
-      weatherForecastStore.set(
-        weatherForecast.map((forecast: any) => ({
-          ...forecast,
-          date: new Date(forecast.date),
-        }))
-      );
-    });
+  import { app } from "@/firebase/client";
+
+  import { getBytes, getStorage, ref } from "firebase/storage";
+
+  export const storage = getStorage(app);
+
+  const fetchBucketItem = async (path: string) => {
+    const path_ref = ref(storage, path);
+    const bytes = await getBytes(path_ref);
+
+    return JSON.parse(new TextDecoder().decode(bytes));
+  };
+
+  fetchBucketItem("prediction/prediction.json").then((data) => {
+    levelForecastStore.set(data);
+  });
+
+  fetchBucketItem("prediction/observation.json").then((data) => {
+    levelObservationStore.set(data);
+  });
+
+  fetchBucketItem("weather/latest_forecast.json").then((data) => {
+    weatherForecastStore.set(data);
+  });
 </script>
 
 <Layout title="Welcome to Astro.">
-  <main>
+  <main class="min-h-screen bg-background text-primary-foreground">
     <!-- Under construction banner -->
     <div class="bg-secondary p-4 mb-4 text-center rounded-sm">
       <span class="font-bold text-lg text-secondary-foreground">
@@ -58,11 +70,8 @@ import Dashboard from "@/components/Dashboard.astro";
         data from it! 🚧
       </span>
     </div>
-    <div class="min-h-screen
-            bg-background">
-      <div class="container px-2 mx-auto">
-        <Dashboard />
-      </div>
+    <div class="container px-2 mx-auto">
+      <Dashboard />
     </div>
   </main>
 </Layout>

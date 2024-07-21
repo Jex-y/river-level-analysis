@@ -2,7 +2,7 @@ program: train.py
 project: river-level-analysis
 method: bayes
 metric:
-  name: total loss (val)
+  name: Total Loss (val)
   goal: minimize
 
 parameters:
@@ -38,13 +38,13 @@ parameters:
     distribution: q_uniform
     q: 0.001
     min: 0.0
-    max: 0.25
+    max: 0.5
 
   ff_dim:
     distribution: q_log_uniform_values
     q: 4
     min: 4
-    max: 256
+    max: 64
 
   activation_function:
     values: ["relu", "tanh", "gelu"]

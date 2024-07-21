@@ -26,5 +26,13 @@
         ".cache"
       ]
     }
-  ]
+  ],
+  "hosting": {
+    "public": "dashboard/dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
 }

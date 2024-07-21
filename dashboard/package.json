@@ -4,10 +4,11 @@
   "version": "0.0.1",
   "scripts": {
     "start": "astro dev",
-    "build": "astro check && bun lint && astro build",
+    "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "lint": "bunx --bun @biomejs/biome check --write ./src"
+    "lint": "bunx --bun @biomejs/biome check ./src",
+    "lint:write": "bunx --bun @biomejs/biome check ./src --write"
   },
   "dependencies": {
     "@astrojs/check": "^0.8.2",
@@ -15,6 +16,7 @@
     "@astrojs/tailwind": "^5.1.0",
     "@nanostores/query": "^0.3.3",
     "@nanostores/react": "^0.7.2",
+    "@pola-rs/browser": "^0.0.1-alpha",
     "@radix-ui/react-select": "^2.1.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -23,7 +25,6 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "firebase": "^10.12.3",
-    "firebase-admin": "^12.2.0",
     "lucide-react": "^0.408.0",
     "nanostores": "^0.10.3",
     "react": "^18.3.1",

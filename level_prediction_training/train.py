@@ -170,9 +170,9 @@ def main(config: Config):
     quantiles = torch.tensor(config.quantiles, device=device)
 
     metric_names = [
-        "mse loss",
-        "quantile loss",
-        "total loss",
+        "MAE Loss",
+        "Quantile Loss",
+        "Total Loss",
     ]
 
     train_metrics = torch.zeros(len(metric_names), device=device)
@@ -210,7 +210,7 @@ def main(config: Config):
     def loss_func(y_pred, y_true):
         pred_mean, pred_quantiles = y_pred[..., 0:1], y_pred[..., 1:]
 
-        mean_loss = F.mse_loss(pred_mean, y_true)
+        mean_loss = F.smooth_l1_loss(pred_mean, y_true)
         quantiles_loss = quantile_loss(
             y_true,
             pred_quantiles,
