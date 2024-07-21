@@ -6,6 +6,7 @@ on:
   push:
     paths:
       - ".github/workflows/firebase-hosting-merge.yml"
+      - "dashboard/**"
     branches:
       - main
 defaults:
