@@ -1,20 +1,55 @@
 ---
 interface Props {
-  title: string;
+  title?: string;
+  description?: string;
+  keywords?: string[];
 }
 
-const { title } = Astro.props;
+const {
+  title = "Durham College Rowing River Dashboard",
+  description = "A dashboard to monitor river conditions for rowing in Durham",
+  keywords = [
+    "Durham",
+    "Durham University",
+    "Rowing",
+    "River",
+    "Wear",
+    "Weather",
+    "Flood",
+    "Rain",
+    "Water",
+    "Data",
+  ],
+} = Astro.props;
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content="Astro description" />
+    <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href="https://river-level.edjex.dev/" />
+    <meta name="author" content="Ed Jex" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="keywords" content={keywords.join(", ")} />
+
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://river-level.edjex.dev" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="" />
+
+    <!-- Twitter Meta Tags -->
+    <!-- <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:domain" content="river-level.edjex.dev" />
+    <meta property="twitter:url" content="https://river-level.edjex.dev" />
+    <meta name="twitter:title" content="Welcome to Astro." />
+    <meta name="twitter:description" content="Astro description" />
+    <meta name="twitter:image" content="" /> -->
+
     <title>{title}</title>
   </head>
   <body>
