@@ -1,4 +1,6 @@
+import { getAnalytics } from 'firebase/analytics';
 import { type FirebaseOptions, initializeApp } from 'firebase/app';
+import { getPerformance } from 'firebase/performance';
 
 const firebaseConfig = {
 	apiKey: 'AIzaSyDQTqkop4ZrY8rt6pmvteI-hPaekfS9Rq8',
@@ -11,3 +13,5 @@ const firebaseConfig = {
 } satisfies FirebaseOptions;
 
 export const app = initializeApp(firebaseConfig);
+export const analytics = getAnalytics(app);
+export const performance = getPerformance(app);
