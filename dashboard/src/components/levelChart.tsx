@@ -36,6 +36,32 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+
+const ToolTip = ({ active, payload, label }) => {
+
+  if (active && payload) {
+    return (
+      <div className="bg-white p-2 rounded shadow-md">
+        <div className="text-sm text-gray-600">{new Date(label).toLocaleTimeString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" })}</div>
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600">Observed</div>
+          <div className="text-sm text-gray-600">{payload[0].value.toFixed(2)} m</div>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600">Predicted</div>
+          <div className="text-sm text-gray-600">{payload[1].value.toFixed(2)} m</div>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600">CI</div>
+          <div className="text-sm text-gray-600">{`${payload[2].value[0].toFixed(2)} - ${payload[2].value[1].toFixed(2)} m`}</div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
 export const LevelGraph: FC = () => {
   const [chartData, setChartData] = useState<RiverLevel[] | undefined>(undefined);
   const observedRiverLevel = useStore(levelObservationStore);
@@ -73,10 +99,10 @@ export const LevelGraph: FC = () => {
       <CardHeader className="flex-row items-center justify-between p-4">
         <CardTitle>River Level</CardTitle>
         <CardDescription>
-          Durham New Elvet Bridge
+          River Wear - Durham New Elvet Bridge
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className='p-2'>
         <ChartContainer config={chartConfig} className="aspect-auto h-[16rem] w-full">
           <AreaChart
             accessibilityLayer
@@ -102,7 +128,7 @@ export const LevelGraph: FC = () => {
             <YAxis
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => value.toFixed(onMobile ? 1 : 2)}
+              tickFormatter={(value) => value.toFixed(2)}
               unit={' m'}
               domain={[
                 (dataMin: number) => Math.max(dataMin - 0.01, 0),
@@ -111,7 +137,18 @@ export const LevelGraph: FC = () => {
             />
             <ChartTooltip
               cursor={true}
-              content={<ChartTooltipContent indicator="dot" />}
+              content={<ChartTooltipContent
+                indicator="dot"
+                labelFormatter={(_, payload) => {
+                  return new Date(
+                    payload[0].payload.timestamp / 1000
+                  ).toLocaleTimeString('en-GB', {
+                    weekday: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  });
+                }}
+              />}
             />
             <defs>
               <linearGradient id="fillObserved" x1="0" y1="0" x2="0" y2="1">
@@ -168,7 +205,6 @@ export const LevelGraph: FC = () => {
               dataKey="ci"
               type="natural"
               fill="url(#fillCi)"
-              // fillOpacity={0.4}
               stroke="var(--color-ci)"
               strokeDasharray={10}
             />

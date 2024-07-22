@@ -20,7 +20,7 @@ export const ParametersReport: FC<ParametersReportProps> = ({ show }: Parameters
   const { value: conditions, loading } = useLazyStore(currentConditionsStore);
 
 
-  return <Card className="w-full max-w-sm">
+  return <Card className="w-full">
     <CardHeader>
       <CardTitle>Conditions</CardTitle>
     </CardHeader>
