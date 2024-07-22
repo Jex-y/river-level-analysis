@@ -1,7 +1,6 @@
 import { levelForecastStore, levelObservationStore } from '@/store';
 import { useStore } from '@nanostores/react';
 import { type FC, useEffect, useState } from 'react';
-import { useMediaQuery } from 'react-responsive';
 
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
