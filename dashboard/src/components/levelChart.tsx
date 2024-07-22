@@ -36,32 +36,6 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-
-const ToolTip = ({ active, payload, label }) => {
-
-  if (active && payload) {
-    return (
-      <div className="bg-white p-2 rounded shadow-md">
-        <div className="text-sm text-gray-600">{new Date(label).toLocaleTimeString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" })}</div>
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">Observed</div>
-          <div className="text-sm text-gray-600">{payload[0].value.toFixed(2)} m</div>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">Predicted</div>
-          <div className="text-sm text-gray-600">{payload[1].value.toFixed(2)} m</div>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">CI</div>
-          <div className="text-sm text-gray-600">{`${payload[2].value[0].toFixed(2)} - ${payload[2].value[1].toFixed(2)} m`}</div>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
-};
-
 export const LevelGraph: FC = () => {
   const [chartData, setChartData] = useState<RiverLevel[] | undefined>(undefined);
   const observedRiverLevel = useStore(levelObservationStore);
@@ -90,9 +64,6 @@ export const LevelGraph: FC = () => {
 
     setChartData(result);
   }, [observedRiverLevel, forecastRiverLevel]);
-
-
-  const onMobile = useMediaQuery({ query: "(max-width: 768px)" });
 
   return (
     <Card>
