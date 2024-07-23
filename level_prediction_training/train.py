@@ -1,8 +1,6 @@
-import json
 import logging
 import logging.config
 import os
-import pickle
 import random
 from pathlib import Path
 
@@ -25,13 +23,12 @@ from sklearn.compose import make_column_selector, make_column_transformer
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from torch.nn import functional as F
 from torch.optim import AdamW
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, default_collate
 
 import wandb
 from src.config import Config
 from src.dataset import TimeSeriesDataset, load_training_data
-from src.quantile_loss import quantile_loss
-from src.ts_mixer import TSMixer
+from src.ts_mixer import Ensemble, TSMixer
 
 os.environ["WANDB_SILENT"] = "true"
 
@@ -106,13 +103,6 @@ def main(config: Config):
     X_test = test_df.to_pandas().astype("float32")
     y_test = test_df.select(config.target_col).to_numpy().astype("float32")
 
-    if config.predict_difference:
-        y_train = y_train[1:] - y_train[:-1]
-        y_test = y_test[1:] - y_test[:-1]
-
-        X_train = X_train[1:]
-        X_test = X_test[1:]
-
     X_train = torch.tensor(X_preprocessing.fit_transform(X_train), device=device)
     y_train = torch.tensor(y_preprocessing.fit_transform(y_train), device=device)
 
@@ -142,42 +132,23 @@ def main(config: Config):
 
     log.info("Initialising model")
 
-    model = TSMixer(
-        config.context_length,
-        config.prediction_length,
-        input_channels=X_train.shape[1],
-        output_channels=len(config.quantiles) + 1,
-        activation_fn=config.activation_function,
-        num_blocks=config.num_blocks,
-        dropout=config.dropout,
-        ff_dim=config.ff_dim,
-        normalize_before=config.normalize_before,
-        norm_type=config.norm_type,
-        predict_difference=config.predict_difference,
-    ).to(device)
-
-    if torch.cuda.is_available():
-        device_cap = torch.cuda.get_device_capability()
-        if device_cap >= (7, 0):
-            model = torch.compile(model)
-
-    log.info(
-        f"Model has {sum(p.numel() for p in model.parameters() if p.requires_grad)} trainable parameters"
+    model = Ensemble(
+        lambda: TSMixer(
+            config.context_length,
+            config.prediction_length,
+            input_channels=X_train.shape[1],
+            activation_fn=config.activation_function,
+            num_blocks=config.num_blocks,
+            dropout=config.dropout,
+            ff_dim=config.ff_dim,
+            normalize_before=config.normalize_before,
+            norm_type=config.norm_type,
+            predict_difference=config.predict_difference,
+        ).to(device),
+        config.ensemble_size,
     )
 
     optim = AdamW(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
-
-    quantiles = torch.tensor(config.quantiles, device=device)
-
-    metric_names = [
-        "MAE Loss",
-        "Quantile Loss",
-        "Total Loss",
-    ]
-
-    train_metrics = torch.zeros(len(metric_names), device=device)
-    val_metrics = torch.zeros(len(metric_names), device=device)
-
     progress = Progress(
         SpinnerColumn(spinner_name="dots"),
         TextColumn("[progress.description]{task.description}"),
@@ -193,35 +164,36 @@ def main(config: Config):
         total=config.train_epochs * (steps_per_train_epoch + steps_per_test_epoch),
     )
 
-    def log_metrics():
-        metrics_dict = {
-            f"{metric_name} ({type})": metric.item()
-            for metrics, type, len in [
-                (train_metrics, "train", len(train_loader)),
-                (val_metrics, "val", len(test_loader)),
-            ]
-            for metric, metric_name in zip(metrics.cpu() / len, metric_names)
-        }
+    log.info("Starting training")
 
-        wandb.log(metrics_dict)
+    def loss_func(y_true, y_pred):
+        per_model_loss = F.smooth_l1_loss(
+            y_pred,
+            y_true.repeat(config.ensemble_size, *([1] * y_true.ndim)),
+            reduction="none",
+        ).mean(dim=tuple(range(1, y_pred.ndim)))
 
-        log.info({key: f"{value:.4f}" for key, value in metrics_dict.items()})
+        y_pred_mean = y_pred.mean(dim=0)
+        y_pred_std = y_pred.std(dim=0)
 
-    def loss_func(y_pred, y_true):
-        pred_mean, pred_quantiles = y_pred[..., 0:1], y_pred[..., 1:]
+        y_pred_mean_error = F.l1_loss(y_pred_mean, y_true, reduction="none").mean(
+            dim=tuple(range(1, y_true.ndim))
+        )
+        error_in_1std_freq = (y_pred_mean_error > y_pred_std).float().mean()
 
-        mean_loss = F.smooth_l1_loss(pred_mean, y_true)
-        quantiles_loss = quantile_loss(
-            y_true,
-            pred_quantiles,
-            quantiles,
+        return (
+            per_model_loss.mean(),
+            {
+                "Mean loss": per_model_loss.mean(),
+                "MAE from ensemble mean": y_pred_mean_error.mean(),
+                "error in 1std freq": error_in_1std_freq,
+            }
+            | {f"model {i+1} loss": loss for i, loss in enumerate(per_model_loss)},
         )
 
-        total_loss = mean_loss + quantiles_loss
-
-        return total_loss, torch.stack([mean_loss, quantiles_loss, total_loss]).detach()
-
-    log.info("Starting training")
+    def mean_dicts(dicts: list[dict[str, torch.Tensor]]) -> dict[str, float]:
+        collated_dicts: dict[str, torch.Tensor] = default_collate(list(dicts))
+        return {key: val.mean().item() for key, val in collated_dicts.items()}
 
     with progress:
         for epoch in range(config.train_epochs):
@@ -233,13 +205,15 @@ def main(config: Config):
                 f"[green]Epoch {epoch + 1} (train)", total=steps_per_train_epoch
             )
 
+            train_metric_log = []
+
             for X_batch, y_batch in train_loader:
                 y_pred = model(X_batch)
 
-                loss, metrics = loss_func(y_pred, y_batch)
+                loss, metrics = loss_func(y_batch, y_pred)
+                train_metric_log.append(metrics)
 
-                loss.backward()
-                train_metrics += metrics
+                loss.mean().backward()
 
                 optim.step()
                 optim.zero_grad()
@@ -248,6 +222,7 @@ def main(config: Config):
                 progress.update(training_task, advance=1)
 
             model.eval()
+            val_metric_log = []
 
             progress.remove_task(epoch_training_task)
             epoch_test_task = progress.add_task(
@@ -257,70 +232,88 @@ def main(config: Config):
             for X_val_batch, y_val_batch in test_loader:
                 with torch.no_grad():
                     y_val_pred = model(X_val_batch)
-                    _, metrics = loss_func(y_val_pred, y_val_batch)
 
-                val_metrics += metrics
+                    _, val_metrics = loss_func(y_val_batch, y_val_pred)
+
+                    val_metric_log.append(val_metrics)
 
                 progress.update(epoch_test_task, advance=1)
                 progress.update(training_task, advance=1)
 
             progress.remove_task(epoch_test_task)
+            mean_train_metrics = mean_dicts(train_metric_log)
+            mean_val_metrics = mean_dicts(val_metric_log)
 
-            log_metrics()
-            train_metrics.zero_()
-            val_metrics.zero_()
+            wandb.log(
+                {
+                    "train": mean_train_metrics,
+                    "val": mean_val_metrics,
+                }
+            )
+
+            mean_train_metrics = {
+                key: f"{val:.4f}" for key, val in mean_train_metrics.items()
+            }
+            mean_val_metrics = {
+                key: f"{val:.4f}" for key, val in mean_val_metrics.items()
+            }
+
+            log.info(f"Train metrics: {mean_train_metrics}")
+            log.info(f"Validation metrics: {mean_val_metrics}")
 
     log.info("Training complete")
 
-    model_dir: Path = config.model_save_dir / wandb.run.name
+    # model_dir: Path = config.model_save_dir / wandb.run.name
 
-    if not model_dir.exists():
-        os.makedirs(model_dir)
+    # if not model_dir.exists():
+    #     os.makedirs(model_dir)
 
-    model_file_path = model_dir / "model_torchscript.pt"
+    # model_file_path = model_dir / "model_torchscript.pt"
 
-    log.info(f"Saving model to {model_file_path}")
+    # log.info(f"Saving model to {model_file_path}")
 
-    model.eval()
-    model_torchscript = torch.jit.script(model.to("cpu"))
-    model_torchscript = torch.jit.optimize_for_inference(model_torchscript)
-    model_torchscript.save(model_file_path)
+    # for model in models:
+    #     model.eval()
 
-    wandb.log_artifact(model_file_path, name="trained_model", type="model")
+    # model_torchscript = torch.jit.script(model.to("cpu"))
+    # model_torchscript = torch.jit.optimize_for_inference(model_torchscript)
+    # model_torchscript.save(model_file_path)
 
-    preprocessing = {
-        "X": X_preprocessing,
-        "y": y_preprocessing,
-    }
+    # wandb.log_artifact(model_file_path, name="trained_model", type="model")
 
-    preprocessing_file_path = model_dir / "preprocessing.pickle"
+    # preprocessing = {
+    #     "X": X_preprocessing,
+    #     "y": y_preprocessing,
+    # }
 
-    log.info(f"Saving preprocessing pipeline to {preprocessing_file_path}")
+    # preprocessing_file_path = model_dir / "preprocessing.pickle"
 
-    with open(preprocessing_file_path, "wb") as f:
-        pickle.dump(preprocessing, f)
+    # log.info(f"Saving preprocessing pipeline to {preprocessing_file_path}")
 
-    wandb.log_artifact(
-        preprocessing_file_path, name="preprocessing_pipeline", type="model"
-    )
+    # with open(preprocessing_file_path, "wb") as f:
+    #     pickle.dump(preprocessing, f)
 
-    inference_config_file_path = model_dir / "inference_config.json"
+    # wandb.log_artifact(
+    #     preprocessing_file_path, name="preprocessing_pipeline", type="model"
+    # )
 
-    inference_config = dict(
-        prediction_length=config.prediction_length,
-        context_length=config.context_length,
-        quantiles=list(config.quantiles),
-        target_col=config.target_col,
-        predict_difference=config.predict_difference,
-        stations=stations.to_dict(as_series=False),
-    )
+    # inference_config_file_path = model_dir / "inference_config.json"
 
-    with open(inference_config_file_path, "w") as f:
-        json.dump(inference_config, f)
+    # inference_config = dict(
+    #     prediction_length=config.prediction_length,
+    #     context_length=config.context_length,
+    #     quantiles=list(config.quantiles),
+    #     target_col=config.target_col,
+    #     predict_difference=config.predict_difference,
+    #     stations=stations.to_dict(as_series=False),
+    # )
 
-    wandb.log_artifact(
-        inference_config_file_path, name="inference_config", type="config"
-    )
+    # with open(inference_config_file_path, "w") as f:
+    #     json.dump(inference_config, f)
+
+    # wandb.log_artifact(
+    #     inference_config_file_path, name="inference_config", type="config"
+    # )
 
     wandb.finish()
 

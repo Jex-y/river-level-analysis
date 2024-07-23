@@ -15,19 +15,19 @@ def calculate_time_features(
     return (
         datetime_series.to_frame()
         .with_columns(
-            (datetime_series.dt.ordinal_day() / 365).alias('day_of_year'),
+            (datetime_series.dt.ordinal_day() / 365).alias("day_of_year"),
             (
                 (
-                    datetime_series.dt.epoch(time_unit='s')
+                    datetime_series.dt.epoch(time_unit="s")
                     - datetime(start_year, 1, 1).timestamp()
                 )
                 / (60 * 60 * 24 * 365.2524)
-            ).alias(f'years_since_{start_year}'),
+            ).alias(f"years_since_{start_year}"),
         )
         .select(
-            (pl.col('day_of_year') * 2 * math.pi).cos().alias('cos_day_of_year'),
-            (pl.col('day_of_year') * 2 * math.pi).sin().alias('sin_day_of_year'),
-            pl.col(f'years_since_{start_year}'),
+            (pl.col("day_of_year") * 2 * math.pi).cos().alias("cos_day_of_year"),
+            (pl.col("day_of_year") * 2 * math.pi).sin().alias("sin_day_of_year"),
+            pl.col(f"years_since_{start_year}"),
         )
     )
 
@@ -42,8 +42,8 @@ def load_training_data(
         df = api.get_measures(stations, start_date=datetime(2007, 1, 1))
 
     df = pl.concat(
-        [df, calculate_time_features(df['dateTime'])], how='horizontal'
-    ).drop('dateTime')
+        [df, calculate_time_features(df["dateTime"])], how="horizontal"
+    ).drop("dateTime")
 
     train_records = int(len(df) * train_split)
 

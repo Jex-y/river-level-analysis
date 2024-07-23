@@ -1,8 +1,11 @@
 from collections.abc import Callable
+from copy import deepcopy
+from functools import partial
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
+from torch.func import functional_call, stack_module_state
 
 
 def swap_time_features(x):
@@ -348,7 +351,7 @@ class TSMixer(nn.Module):
         sequence_length: int,
         prediction_length: int,
         input_channels: int,
-        output_channels: int = None,
+        output_channels: int = 1,
         activation_fn: str = "relu",
         num_blocks: int = 2,
         dropout: float = 0.1,
@@ -430,3 +433,31 @@ class TSMixer(nn.Module):
         x_temp = self.temporal_projection(x_temp)
         x = swap_time_features(x_temp)
         return x
+
+
+class EnsembleModel:
+    def __init__(
+        self,
+        init_module: Callable[[], nn.Module],
+        num_modules: int,
+    ):
+        self.modules = [init_module() for _ in range(num_modules)]
+
+        base_model = deepcopy(self.modules[0])
+        base_model.to("meta")
+
+        self.ensemble_params, self.ensemble_buffers = stack_module_state(self.modules)
+
+        self.call_single_module = partial(functional_call, base_model)
+
+        self.num_modules = num_modules
+
+    def __call__(self, x):
+        return self.forward(x)
+
+    def forward(self, x):
+        return torch.vmap(
+            self.call_single_module,
+            in_dims=((0, 0), None),
+            randomness="different",
+        )((self.ensemble_params, self.ensemble_buffers), x)
