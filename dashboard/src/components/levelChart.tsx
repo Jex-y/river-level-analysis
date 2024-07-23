@@ -69,7 +69,7 @@ export const LevelGraph: FC = () => {
       <CardHeader className="flex-row items-center justify-between p-4">
         <CardTitle>River Level</CardTitle>
         <CardDescription>
-          River Wear - Durham New Elvet Bridge
+          River Wear - New Elvet Bridge
         </CardDescription>
       </CardHeader>
       <CardContent className='p-2'>
