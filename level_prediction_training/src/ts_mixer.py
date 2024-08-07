@@ -348,7 +348,7 @@ class TSMixer(nn.Module):
         sequence_length: int,
         prediction_length: int,
         input_channels: int,
-        output_channels: int = None,
+        output_channels: int = 1,
         activation_fn: str = "relu",
         num_blocks: int = 2,
         dropout: float = 0.1,

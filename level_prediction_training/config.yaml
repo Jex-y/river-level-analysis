@@ -16,7 +16,12 @@ dropout: 0.2
 ff_dim: 12
 normalize_before: true
 norm_type: batch
+<<<<<<< HEAD
 weight_decay: 0.00003
+=======
+weight_decay: 0.001
+ensemble_size: 10
+>>>>>>> 8cf65d2c650af6ee91dabe9a42c2823002500223
 
 # TODO: Also config threshold level probabilities
 

@@ -15,6 +15,7 @@ class Config:
     target_col: str
     train_split: float
     predict_difference: bool
+    ensemble_size: int
 
     activation_function: str
     num_blocks: int
