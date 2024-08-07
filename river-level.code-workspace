@@ -20,6 +20,9 @@
 		},
 		{
 			"path": "backend"
+		},
+		{
+			"path": "sewage_leak"
 		}
 	],
 	"settings": {

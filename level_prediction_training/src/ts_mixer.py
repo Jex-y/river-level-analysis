@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 
-def swap_time_features(x):
+def swap_time_features(x: torch.Tensor) -> torch.Tensor:
     return x.permute(0, 2, 1)
 
 
@@ -416,17 +416,19 @@ class TSMixer(nn.Module):
     def forward(
         self,
         x_hist: torch.Tensor,
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Forward pass of the TSMixer model.
 
         Args:
             x_hist (torch.Tensor): Input time series tensor.
 
         Returns:
-            torch.Tensor: The output tensor after processing by the model.
+            tuple[torch.Tensor, torch.Tensor]: Tuple of predicted mean and log variance.
         """
         x = self.mixer_layers(x_hist)
         x_temp = swap_time_features(x)
         x_temp = self.temporal_projection(x_temp)
         x = swap_time_features(x_temp)
-        return x
+        mu, log_var = x.chunk(2, dim=-1)
+
+        return mu, log_var

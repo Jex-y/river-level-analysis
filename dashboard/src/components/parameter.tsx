@@ -27,6 +27,7 @@ export const ParametersReport: FC<ParametersReportProps> = ({ show }: Parameters
     {show.map((name) => {
       const { label, formatFn, statusFn, icon: Icon } = parameterInfo[name];
       const isLoading = loading || !conditions;
+      console.log(conditions);
 
       return (
         <CardContent key={name} className="flex items-center gap-4">

@@ -2,7 +2,7 @@ program: train.py
 project: river-level-analysis
 method: bayes
 metric:
-  name: Total Loss (val)
+  name: test.NNL
   goal: minimize
 
 parameters:
@@ -44,7 +44,7 @@ parameters:
     distribution: q_log_uniform_values
     q: 4
     min: 4
-    max: 64
+    max: 1024
 
   activation_function:
     values: ["relu", "tanh", "gelu"]
@@ -58,7 +58,7 @@ parameters:
 early_terminate:
   type: hyperband
   eta: 2
-  min_iter: 5
+  min_iter: 8
 
 command: 
   - D:\code\river-level-analysis\level_prediction_training\venv\Scripts\python.exe

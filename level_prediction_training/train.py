@@ -7,6 +7,7 @@ import random
 from pathlib import Path
 
 import hydra
+import numpy as np
 import polars as pl
 import torch
 import yaml
@@ -23,14 +24,12 @@ from rich.progress import (
 )
 from sklearn.compose import make_column_selector, make_column_transformer
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-from torch.nn import functional as F
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
 import wandb
 from src.config import Config
 from src.dataset import TimeSeriesDataset, load_training_data
-from src.quantile_loss import quantile_loss
 from src.ts_mixer import TSMixer
 
 os.environ["WANDB_SILENT"] = "true"
@@ -146,7 +145,7 @@ def main(config: Config):
         config.context_length,
         config.prediction_length,
         input_channels=X_train.shape[1],
-        output_channels=len(config.quantiles) + 1,
+        output_channels=2,
         activation_fn=config.activation_function,
         num_blocks=config.num_blocks,
         dropout=config.dropout,
@@ -167,17 +166,6 @@ def main(config: Config):
 
     optim = AdamW(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
 
-    quantiles = torch.tensor(config.quantiles, device=device)
-
-    metric_names = [
-        "MAE Loss",
-        "Quantile Loss",
-        "Total Loss",
-    ]
-
-    train_metrics = torch.zeros(len(metric_names), device=device)
-    val_metrics = torch.zeros(len(metric_names), device=device)
-
     progress = Progress(
         SpinnerColumn(spinner_name="dots"),
         TextColumn("[progress.description]{task.description}"),
@@ -193,39 +181,55 @@ def main(config: Config):
         total=config.train_epochs * (steps_per_train_epoch + steps_per_test_epoch),
     )
 
-    def log_metrics():
-        metrics_dict = {
-            f"{metric_name} ({type})": metric.item()
-            for metrics, type, len in [
-                (train_metrics, "train", len(train_loader)),
-                (val_metrics, "val", len(test_loader)),
-            ]
-            for metric, metric_name in zip(metrics.cpu() / len, metric_names)
-        }
+    def loss_func(
+        y_pred_mu: torch.Tensor,
+        y_pred_log_var: torch.Tensor,
+        y_true: torch.Tensor,
+    ):
+        error = y_pred_mu - y_true
+        square_error = error**2
 
-        wandb.log(metrics_dict)
+        mse = torch.mean(square_error)
+        mae = torch.mean(torch.abs(error))
 
-        log.info({key: f"{value:.4f}" for key, value in metrics_dict.items()})
-
-    def loss_func(y_pred, y_true):
-        pred_mean, pred_quantiles = y_pred[..., 0:1], y_pred[..., 1:]
-
-        mean_loss = F.smooth_l1_loss(pred_mean, y_true)
-        quantiles_loss = quantile_loss(
-            y_true,
-            pred_quantiles,
-            quantiles,
+        y_pred_log_var = torch.maximum(
+            y_pred_log_var, torch.tensor(1e-6, device=device)
         )
 
-        total_loss = mean_loss + quantiles_loss
+        nll = 0.5 * (y_pred_log_var + (square_error / y_pred_log_var.exp())).mean()
 
-        return total_loss, torch.stack([mean_loss, quantiles_loss, total_loss]).detach()
+        return nll, {
+            "NNL": nll.detach(),
+            "MSE": mse.detach(),
+            "MAE": mae.detach(),
+            "residuals_hist": np.histogram(error.numpy(force=True), bins=100),
+        }
+
+    def collate_metrics(
+        metrics: list[dict[str, torch.Tensor]],
+    ) -> dict[str, torch.Tensor]:
+        scalars = {
+            k: torch.stack([m[k] for m in metrics]).mean().item()
+            for k in metrics[0].keys()
+            if k != "residuals_hist"
+        }
+
+        return {
+            "scalars": scalars,
+            "residuals_hist": wandb.Histogram(
+                np_histogram=metrics[-1]["residuals_hist"]
+            ),
+        }
+
+    def format_metrics(metrics: dict[str, torch.Tensor]) -> str:
+        return ", ".join([f"{k}: {v:.4f}" for k, v in metrics["scalars"].items()])
 
     log.info("Starting training")
 
     with progress:
         for epoch in range(config.train_epochs):
             model.train()
+            train_loss_record = []
 
             log.info(f"Epoch {epoch + 1} / {config.train_epochs}")
 
@@ -234,12 +238,12 @@ def main(config: Config):
             )
 
             for X_batch, y_batch in train_loader:
-                y_pred = model(X_batch)
+                y_pred_mu, y_pred_log_var = model(X_batch)
 
-                loss, metrics = loss_func(y_pred, y_batch)
+                loss, metrics = loss_func(y_pred_mu, y_pred_log_var, y_batch)
+                train_loss_record.append(metrics)
 
                 loss.backward()
-                train_metrics += metrics
 
                 optim.step()
                 optim.zero_grad()
@@ -248,6 +252,8 @@ def main(config: Config):
                 progress.update(training_task, advance=1)
 
             model.eval()
+            log.info(f"Train: {format_metrics(collate_metrics(train_loss_record))}")
+            val_loss_record = []
 
             progress.remove_task(epoch_training_task)
             epoch_test_task = progress.add_task(
@@ -256,19 +262,22 @@ def main(config: Config):
 
             for X_val_batch, y_val_batch in test_loader:
                 with torch.no_grad():
-                    y_val_pred = model(X_val_batch)
-                    _, metrics = loss_func(y_val_pred, y_val_batch)
-
-                val_metrics += metrics
+                    y_pred_mu, y_pred_log_var = model(X_val_batch)
+                    _, metrics = loss_func(y_pred_mu, y_pred_log_var, y_val_batch)
+                    val_loss_record.append(metrics)
 
                 progress.update(epoch_test_task, advance=1)
                 progress.update(training_task, advance=1)
 
+            log.info(f"Test: {format_metrics(collate_metrics(val_loss_record))}")
             progress.remove_task(epoch_test_task)
 
-            log_metrics()
-            train_metrics.zero_()
-            val_metrics.zero_()
+            wandb.log(
+                {
+                    "train": collate_metrics(train_loss_record),
+                    "test": collate_metrics(val_loss_record),
+                }
+            )
 
     log.info("Training complete")
 
@@ -309,7 +318,6 @@ def main(config: Config):
     inference_config = dict(
         prediction_length=config.prediction_length,
         context_length=config.context_length,
-        quantiles=list(config.quantiles),
         target_col=config.target_col,
         predict_difference=config.predict_difference,
         stations=stations.to_dict(as_series=False),

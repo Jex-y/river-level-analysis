@@ -28,6 +28,7 @@ import Layout from "../layouts/Layout.astro";
   });
 
   fetchBucketItem("prediction/observation.json").then((data) => {
+    console.log("recieved observation data:", data);
     levelObservationStore.set(data);
   });
 

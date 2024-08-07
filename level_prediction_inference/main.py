@@ -21,7 +21,6 @@ class Config:
     context_length: int
     prediction_length: int
     target_col: str
-    quantiles: list
     predict_difference: bool
 
 
@@ -193,7 +192,7 @@ def calculate_time_features(
 
 async def predict(df: pl.DataFrame, config: Config) -> pl.DataFrame:
     logging.info("Loading dependencies for prediction")
-    from torch import tensor
+    from torch import exp, tensor
 
     df = df.tail(config.context_length)
     df = pl.concat([df, calculate_time_features(df["dateTime"])], how="horizontal")
@@ -209,22 +208,28 @@ async def predict(df: pl.DataFrame, config: Config) -> pl.DataFrame:
 
     logging.info("Making prediction")
 
-    y_pred = model(X).detach().numpy().reshape(-1, 1)
-    y_pred = y_preprocessing.inverse_transform(y_pred).reshape(
-        config.prediction_length, -1
+    y_pred_mu_scaled, y_pred_log_var_scaled = model(X)
+    y_pred_mu_scaled = y_pred_mu_scaled.detach().numpy().reshape(-1, 1)
+    y_pred_log_var_scaled = y_pred_log_var_scaled.detach().reshape(-1, 1)
+    y_pred_mu = y_preprocessing.inverse_transform(y_pred_mu_scaled).reshape(
+        config.prediction_length
+    )
+    # Variance should only be scaled, not shifted
+    y_pred_var = (
+        exp(2 * y_pred_log_var_scaled * y_preprocessing.scale_[0])
+        .numpy()
+        .reshape(config.prediction_length)
     )
 
     if config.predict_difference:
         raise NotImplementedError("Predicting differences not implemented")
-        # last_value = df[config.target_col][-1]
-        # y_pred[:, 0] = y_pred[:, 0].cumsum(axis=0) + last_value
 
     last_observed = df["dateTime"].max()
 
     return pl.DataFrame(
         [
-            pl.Series("predicted", y_pred[:, 0]),
-            pl.Series("ci", y_pred[:, 1:]),
+            pl.Series("predicted", y_pred_mu),
+            pl.Series("std", y_pred_var),
         ]
     ).with_columns(
         pl.datetime_range(

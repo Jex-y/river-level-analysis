@@ -1,23 +1,22 @@
 seed: null
 prediction_length: 32
-context_length: 48
-train_epochs: 50
-quantiles: [0.05, 0.95]
+context_length: 96
+train_epochs: 250
 train_split: 0.85
 model_save_dir: ./models
 target_col: Durham New Elvet Bridge - level
 
-lr: 0.0008
-batch_size: 1024
+lr: 0.0003
+batch_size: 2048
 
-activation_function: tanh
+activation_function: relu
 predict_difference: false # Need to think a bit more about the implications of this with the ci
 num_blocks: 3
 dropout: 0.2
-ff_dim: 4
-normalize_before: false
+ff_dim: 12
+normalize_before: true
 norm_type: batch
-weight_decay: 0.001
+weight_decay: 0.00003
 
 # TODO: Also config threshold level probabilities
 

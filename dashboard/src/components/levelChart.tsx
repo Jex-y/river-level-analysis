@@ -20,6 +20,10 @@ import {
 } from "@/components/ui/chart"
 import type { RiverLevel } from '@/lib/models';
 
+const TYPICAL_LOW = 0.226;
+// const TYPICAL_HIGH = 2.630;
+const TYPICAL_HIGH = 0.75;
+
 const chartConfig = {
   observed: {
     label: "Observed",
@@ -29,8 +33,8 @@ const chartConfig = {
     label: "Predicted",
     color: "hsl(var(--chart-4))",
   },
-  ci: {
-    label: "CI",
+  std: {
+    label: "1 Std Dev",
     color: "hsl(var(--chart-2))",
   },
 } satisfies ChartConfig
@@ -101,8 +105,8 @@ export const LevelGraph: FC = () => {
               tickFormatter={(value) => value.toFixed(2)}
               unit={' m'}
               domain={[
-                (dataMin: number) => Math.max(dataMin - 0.01, 0),
-                (dataMax: number) => dataMax + 0.01,
+                (dataMin: number) => Math.min(dataMin - 0.01, TYPICAL_LOW),
+                (dataMax: number) => Math.max(dataMax + 0.01, TYPICAL_HIGH),
               ]}
             />
             <ChartTooltip
@@ -145,15 +149,15 @@ export const LevelGraph: FC = () => {
                   stopOpacity={0.1}
                 />
               </linearGradient>
-              <linearGradient id="fillCi" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="fillStd" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="var(--color-ci)"
+                  stopColor="var(--color-std)"
                   stopOpacity={0.6}
                 />
                 <stop
                   offset="95%"
-                  stopColor="var(--color-ci)"
+                  stopColor="var(--color-std)"
                   stopOpacity={0.1}
                 />
               </linearGradient>
@@ -171,13 +175,13 @@ export const LevelGraph: FC = () => {
               stroke="var(--color-predicted)"
               strokeDasharray={10}
             />
-            <Area
-              dataKey="ci"
+            {/* <Area
+              dataKey="std"
               type="natural"
-              fill="url(#fillCi)"
-              stroke="var(--color-ci)"
+              fill="url(#fillStd)"
+              stroke="var(--color-std)"
               strokeDasharray={10}
-            />
+            /> */}
           </AreaChart>
         </ChartContainer>
       </CardContent>

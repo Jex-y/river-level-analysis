@@ -20,6 +20,7 @@ export const weatherForecastStore = atom<WeatherForecast[] | 'loading'>(
 export const currentLevelObservationStore = computed(
 	[levelObservationStore],
 	(observed) => {
+		console.log('Observed level:', observed);
 		if (observed === 'loading') {
 			return observed;
 		}
@@ -49,6 +50,8 @@ export const currentConditionsStore = computed<
 		if (weather === 'loading' || levelObservation === 'loading') {
 			return 'loading';
 		}
+
+		console.log(levelObservation);
 
 		return {
 			temperature: weather.temperature,
