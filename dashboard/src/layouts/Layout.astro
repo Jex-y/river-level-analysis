@@ -1,28 +1,28 @@
 ---
-import "@/styles/global.css";
-import Footer from "@/components/Footer.astro";
+import '@/styles/global.css';
+import Footer from '@/components/Footer.astro';
 
 interface Props {
-  title?: string;
-  description?: string;
-  keywords?: string[];
+	title?: string;
+	description?: string;
+	keywords?: string[];
 }
 
 const {
-  title = "Durham Rowing - River Dashboard",
-  description = "A dashboard to monitor river conditions for rowing in Durham",
-  keywords = [
-    "Durham",
-    "Durham University",
-    "Rowing",
-    "River",
-    "Wear",
-    "Weather",
-    "Flood",
-    "Rain",
-    "Water",
-    "Data",
-  ],
+	title = 'Durham Rowing - River Dashboard',
+	description = 'A dashboard to monitor river conditions for rowing in Durham',
+	keywords = [
+		'Durham',
+		'Durham University',
+		'Rowing',
+		'River',
+		'Wear',
+		'Weather',
+		'Flood',
+		'Rain',
+		'Water',
+		'Data',
+	],
 } = Astro.props;
 ---
 

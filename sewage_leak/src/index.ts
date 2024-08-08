@@ -1,103 +1,46 @@
 import * as logger from 'firebase-functions/logger';
 import { onRequest } from 'firebase-functions/v2/https';
 
-import {
-	type Document,
-	type FindOptions,
-	MongoClient,
-	type WithId,
-} from 'mongodb';
+import { MongoClient } from 'mongodb';
 
-const url = process.env.DB_URI;
-if (!url) {
-	throw new Error('DB_URI environment variable is required');
-}
-
-const client = new MongoClient(url);
 const dbName = 'riverdata';
 const collectionName = 'spills';
+let _client: MongoClient | null = null;
 
-const formatEvent = <T extends {}, V extends {}>(
-	events: T[],
-	new_keys: V
-): (T & V)[] =>
-	events.map((event: T) => ({
-		...event,
-		...new_keys,
-	}));
+const getClient = () => {
+	if (!_client) {
+		const url = process.env.DB_URI;
+		if (!url) {
+			throw new Error('DB_URI environment variable is required');
+		}
+		_client = new MongoClient(url);
+	}
 
-const logQuery = async (
-	query_name: string,
-	promise: Promise<WithId<Document>[]>
-): Promise<WithId<Document>[]> => {
-	logger.info(`Query ${query_name} started`);
-	const results = await promise;
-	logger.info(`Query ${query_name} returned ${results.length} results`, {
-		results,
-	});
-	return results;
+	return _client;
 };
 
 const fetch_data = async () => {
+	const client = getClient();
 	const db = client.db(dbName);
 	const collection = db.collection(collectionName);
 
-	const nearbySpillsPromise = collection
+	logger.info('Fetching sewage leaks');
+
+	const results = await collection
 		.find(
 			{
-				'metadata.nearby': true,
-				event_type: 'spill',
 				event_end: {
 					$gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
 				},
 			},
 			{
 				projection: { _id: 0 },
-			} satisfies FindOptions
+			}
 		)
 		.toArray();
 
-	const nearbyOfflinePromise = collection
-		.find(
-			{
-				'metadata.nearby': true,
-				event_type: 'monitor offline',
-				event_end: {
-					$gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
-				},
-			},
-			{
-				projection: { _id: 0 },
-			} satisfies FindOptions
-		)
-		.toArray();
-
-	const distantSpillsPromise = collection
-		.find(
-			{
-				'metadata.nearby': false,
-				type: 'spill',
-				event_end: {
-					$gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
-				},
-			},
-			{
-				projection: { _id: 0 },
-			} satisfies FindOptions
-		)
-		.toArray();
-
-	const [nearbySpills, nearbyOffline, distantSpills] = await Promise.all([
-		logQuery('nearbySpills', nearbySpillsPromise),
-		logQuery('nearbyOffline', nearbyOfflinePromise),
-		logQuery('distantSpills', distantSpillsPromise),
-	]);
-
-	return [
-		...formatEvent(nearbySpills, { severity: 'high' }),
-		...formatEvent(nearbyOffline, { severity: 'medium' }),
-		...formatEvent(distantSpills, { severity: 'medium' }),
-	];
+	logger.info(`Found ${results.length} sewage leaks`);
+	return results;
 };
 
 export const getSewageLeaks = onRequest(

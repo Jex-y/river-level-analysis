@@ -1,11 +1,6 @@
+import { Status } from '@/components/ui/status-color-dot';
 import { CloudFog, Sun, Thermometer, Waves, Wind } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-
-export enum ParameterStatus {
-	Good = 'Good',
-	Warning = 'Warning',
-	Bad = 'Bad',
-}
 
 // TODO: Implement sunrise and sunset
 // Can we calculate this from latitude and datetime?
@@ -24,7 +19,7 @@ export type ParameterInfo = {
 	label: string;
 	defaultValue?: number;
 	formatFn: (value: number) => string;
-	statusFn: (value: number) => ParameterStatus;
+	statusFn: (value: number) => Status;
 	icon: LucideIcon;
 };
 
@@ -35,22 +30,22 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 		formatFn: (value: number) => `${value.toFixed(1)} °C`,
 		statusFn: (value: number) => {
 			if (value < -5) {
-				return ParameterStatus.Bad;
+				return Status.Bad;
 			}
 
 			if (value < 5) {
-				return ParameterStatus.Warning;
+				return Status.Warning;
 			}
 
 			if (value > 25) {
-				return ParameterStatus.Warning;
+				return Status.Warning;
 			}
 
 			if (value > 30) {
-				return ParameterStatus.Bad;
+				return Status.Bad;
 			}
 
-			return ParameterStatus.Good;
+			return Status.Good;
 		},
 	},
 	temperatureApparent: {
@@ -59,22 +54,22 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 		formatFn: (value: number) => `${value.toFixed(1)} °C`,
 		statusFn: (value: number) => {
 			if (value < -5) {
-				return ParameterStatus.Bad;
+				return Status.Bad;
 			}
 
 			if (value < 5) {
-				return ParameterStatus.Warning;
+				return Status.Warning;
 			}
 
 			if (value > 25) {
-				return ParameterStatus.Warning;
+				return Status.Warning;
 			}
 
 			if (value > 35) {
-				return ParameterStatus.Bad;
+				return Status.Bad;
 			}
 
-			return ParameterStatus.Good;
+			return Status.Good;
 		},
 	},
 	uvIndex: {
@@ -85,14 +80,14 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 		formatFn: (value: number) => value.toFixed(0),
 		statusFn: (value: number) => {
 			if (value < 3) {
-				return ParameterStatus.Good;
+				return Status.Good;
 			}
 
 			if (value < 8) {
-				return ParameterStatus.Warning;
+				return Status.Warning;
 			}
 
-			return ParameterStatus.Bad;
+			return Status.Bad;
 		},
 	},
 	visibility: {
@@ -101,14 +96,14 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 		formatFn: (value: number) => `${value.toFixed(1)} km`,
 		statusFn: (value: number) => {
 			if (value < 1) {
-				return ParameterStatus.Bad;
+				return Status.Bad;
 			}
 
 			if (value < 3) {
-				return ParameterStatus.Warning;
+				return Status.Warning;
 			}
 
-			return ParameterStatus.Good;
+			return Status.Good;
 		},
 	},
 	windGust: {
@@ -120,15 +115,15 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 
 			// 30 Miles per hour
 			if (value_mph < 30) {
-				return ParameterStatus.Good;
+				return Status.Good;
 			}
 
 			// 45 Miles per hour
 			if (value_mph < 45) {
-				return ParameterStatus.Warning;
+				return Status.Warning;
 			}
 
-			return ParameterStatus.Bad;
+			return Status.Bad;
 		},
 	},
 	windSpeed: {
@@ -139,14 +134,14 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 			const value_mph = value * 0.621371;
 
 			if (value_mph < 15) {
-				return ParameterStatus.Good;
+				return Status.Good;
 			}
 
 			if (value_mph < 25) {
-				return ParameterStatus.Warning;
+				return Status.Warning;
 			}
 
-			return ParameterStatus.Bad;
+			return Status.Bad;
 		},
 	},
 	riverLevel: {
@@ -155,14 +150,14 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 		formatFn: (value: number) => `${value.toFixed(2)} m`,
 		statusFn: (value: number) => {
 			if (value < 0.65) {
-				return ParameterStatus.Good;
+				return Status.Good;
 			}
 
 			if (value < 0.675) {
-				return ParameterStatus.Warning;
+				return Status.Warning;
 			}
 
-			return ParameterStatus.Bad;
+			return Status.Bad;
 		},
 	},
 };

@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export type ForecastRiverLevel = {
 	timestamp: number;
 	predicted: number;
@@ -49,3 +51,30 @@ export type Data = {
 	levelObservation: ObservedRiverLevel[];
 	weatherForecast: WeatherForecast[];
 };
+
+// export type SewageEvent = {
+// 	metadata: {
+// 		site_name: string;
+// 		site_id: string;
+// 		nearby: boolean;
+// 		event_id: string;
+// 	};
+// 	event_start: Date;
+// 	event_end: Date;
+// 	event_type: 'spill' | 'monitor offline';
+// 	severity: 'low' | 'medium' | 'high';
+// };
+
+export const SewageEventSchema = z.object({
+	metadata: z.object({
+		site_name: z.string(),
+		site_id: z.string(),
+		nearby: z.boolean(),
+		event_id: z.string(),
+	}),
+	event_start: z.coerce.date(),
+	event_end: z.coerce.date(),
+	event_type: z.union([z.literal('spill'), z.literal('monitor offline')]),
+});
+
+export type SewageEvent = z.infer<typeof SewageEventSchema>;

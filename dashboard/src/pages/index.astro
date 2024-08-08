@@ -1,6 +1,6 @@
 ---
-import Dashboard from "@/components/Dashboard.astro";
-import Layout from "../layouts/Layout.astro";
+import Dashboard from '@/components/Dashboard.astro';
+import Layout from '../layouts/Layout.astro';
 ---
 
 <script>
@@ -8,11 +8,15 @@ import Layout from "../layouts/Layout.astro";
     levelForecastStore,
     levelObservationStore,
     weatherForecastStore,
+    sewageEventStore,
   } from "@/store";
+
+  import { SewageEventSchema } from "@/lib/models";
 
   import { app } from "@/firebase/client";
 
   import { getBytes, getStorage, ref } from "firebase/storage";
+  import { z } from "zod";
 
   export const storage = getStorage(app);
 
@@ -28,13 +32,20 @@ import Layout from "../layouts/Layout.astro";
   });
 
   fetchBucketItem("prediction/observation.json").then((data) => {
-    console.log("recieved observation data:", data);
     levelObservationStore.set(data);
   });
 
   fetchBucketItem("weather/latest_forecast.json").then((data) => {
     weatherForecastStore.set(data);
   });
+
+  fetch("https://getsewageleaks-fjdislxqya-nw.a.run.app/")
+    .then(async (response) => {
+      const data = await response.json();
+      const schema = z.array(SewageEventSchema);
+      sewageEventStore.set(schema.parse(data));
+    })
+    .catch((error) => console.error("Error fetching sewage events:", error));
 </script>
 
 <Layout>
