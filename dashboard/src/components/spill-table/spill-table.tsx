@@ -47,6 +47,7 @@ import { useBreakpoint } from '@/lib/hooks/useBreakpoint';
 import { cn } from '@/lib/utils';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLazyStore } from '@/lib/useLazyStore';
 
 
 
@@ -147,7 +148,8 @@ const columns: ColumnDef<SewageEvent>[] = [
   },
   {
     id: 'duration',
-    accessorFn: (row) => row.event_end.getTime() - row.event_start.getTime(),
+    // accessorFn: (row) => row.event_end.getTime() - row.event_start.getTime(),
+    accessorKey: 'event_duration_mins',
     cell: ({ getValue }) => <span>{formatDuration(getValue() as number)}</span>,
     header: 'Duration',
   },
@@ -335,7 +337,8 @@ function DataTable<TData, TValue>({
 }
 
 export function SpillTable() {
-  const sewageEvents = useStore(sewageEventStore);
+  const { value, loading } = useLazyStore(sewageEventStore);
+
   return (
     <Card>
       <CardHeader>
@@ -345,7 +348,7 @@ export function SpillTable() {
           this case, spillage should definitely not be lickage!
         </CardDescription>
       </CardHeader>
-      <DataTable columns={columns} data={sewageEvents !== 'loading' ? sewageEvents : []} loading={sewageEvents === 'loading'} />
+      <DataTable columns={columns} data={value || []} loading={loading} />
     </Card>
   );
 }

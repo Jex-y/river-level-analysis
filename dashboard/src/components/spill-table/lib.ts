@@ -108,22 +108,22 @@ export const formatDate = (date: Date) => {
 };
 
 export const formatDuration = (duration: number) => {
-	if (duration === 0) {
-		return '';
-	}
-
-	const days = Math.floor(duration / (1000 * 60 * 60 * 24));
+	const days = Math.floor(duration / (60 * 24));
 	const hours = Math.floor(
-		(duration % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+		(duration % (60 * 24)) / (60)
 	);
-	const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+	const minutes = duration % 60;
 
-	if (days > 2) {
+	if (days > 3) {
 		return `${days} days`;
 	}
 
-	if (days > 0) {
+	if (days > 1) {
 		return `${days} days ${hours} hours`;
+	}
+
+	if (days > 0) {
+		return `1 day ${hours} hours`;
 	}
 
 	return `${hours} hours ${minutes} mins`;

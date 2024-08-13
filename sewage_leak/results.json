@@ -1,0 +1,1178 @@
+[
+  {
+    "metadata": {
+      "site_name": "BUTTERKNOWLE CSO 2",
+      "site_id": "6NW000029",
+      "nearby": false,
+      "event_id": "6NW000029_1723544104.646578"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-13T10:45:03.019Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 8475
+  },
+  {
+    "metadata": {
+      "site_name": "RAMSHAW SEWAGE TREATMENT WORKS",
+      "site_id": "6NW800731",
+      "nearby": false,
+      "event_id": "6NW800731_1723536003.352557"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-13T10:15:04.646Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 8445
+  },
+  {
+    "metadata": {
+      "site_name": "Front Street SO 4",
+      "site_id": "6NW801138",
+      "nearby": false,
+      "event_id": "6NW801138_1723520707.595733"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-13T08:00:03.352Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 8310
+  },
+  {
+    "metadata": {
+      "site_name": "Dellwood Storage Tank SO",
+      "site_id": "6NW801135",
+      "nearby": false,
+      "event_id": "6NW801135_1718314200.0"
+    },
+    "event_start": "2024-06-13T21:30:00.000Z",
+    "event_end": "2024-08-13T03:45:07.596Z",
+    "event_type": "spill",
+    "event_duration_mins": 86775
+  },
+  {
+    "metadata": {
+      "site_name": "Dellwood Storage Tank SO",
+      "site_id": "6NW801135",
+      "nearby": false,
+      "event_id": "6NW801135_1718314200.0"
+    },
+    "event_start": "2024-06-13T21:30:00.000Z",
+    "event_end": "2024-08-12T15:45:02.554Z",
+    "event_type": "spill",
+    "event_duration_mins": 86055
+  },
+  {
+    "metadata": {
+      "site_name": "Vinovium STW SO",
+      "site_id": "6NW800744",
+      "nearby": false,
+      "event_id": "6NW800744_1723475702.554016"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-12T15:30:02.919Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 7320
+  },
+  {
+    "metadata": {
+      "site_name": "Park Road North SO",
+      "site_id": "6NW801668",
+      "nearby": false,
+      "event_id": "6NW801668_1723473907.025462"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-12T15:15:02.554Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 7305
+  },
+  {
+    "metadata": {
+      "site_name": "THE SLACK CSO (TE 010)",
+      "site_id": "6NW800235",
+      "nearby": false,
+      "event_id": "6NW800235_1723472103.229956"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-12T14:45:07.025Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 7275
+  },
+  {
+    "metadata": {
+      "site_name": "Mayfield SO",
+      "site_id": "6NW801195",
+      "nearby": false,
+      "event_id": "6NW801195_1723464902.510274"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-12T14:15:03.229Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 7245
+  },
+  {
+    "metadata": {
+      "site_name": "Park Head Storage Tank SO",
+      "site_id": "6NW800286",
+      "nearby": false,
+      "event_id": "6NW800286_1723456805.992973"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-12T12:15:02.510Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 7125
+  },
+  {
+    "metadata": {
+      "site_name": "BUTTERKNOWLE CSO 2",
+      "site_id": "6NW000029",
+      "nearby": false,
+      "event_id": "6NW000029_1723455902.651209"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-12T10:00:05.993Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 6990
+  },
+  {
+    "metadata": {
+      "site_name": "Stanhope STW SO",
+      "site_id": "6NW800712",
+      "nearby": false,
+      "event_id": "6NW800712_1720633050.0"
+    },
+    "event_start": "2024-07-10T17:37:30.000Z",
+    "event_end": "2024-08-12T09:45:02.651Z",
+    "event_type": "spill",
+    "event_duration_mins": 47048
+  },
+  {
+    "metadata": {
+      "site_name": "Stanhope STW SO",
+      "site_id": "6NW800712",
+      "nearby": false,
+      "event_id": "6NW800712_1720633050.0"
+    },
+    "event_start": "2024-07-10T17:37:30.000Z",
+    "event_end": "2024-08-12T08:30:03.210Z",
+    "event_type": "spill",
+    "event_duration_mins": 46973
+  },
+  {
+    "metadata": {
+      "site_name": "Dellwood Storage Tank SO",
+      "site_id": "6NW801135",
+      "nearby": false,
+      "event_id": "6NW801135_1723449603.113847"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-12T08:15:02.737Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 6885
+  },
+  {
+    "metadata": {
+      "site_name": "RAMSHAW SEWAGE TREATMENT WORKS",
+      "site_id": "6NW800731",
+      "nearby": false,
+      "event_id": "6NW800731_1723389302.553189"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-12T08:00:03.114Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 6870
+  },
+  {
+    "metadata": {
+      "site_name": "Vinovium STW SO",
+      "site_id": "6NW800744",
+      "nearby": false,
+      "event_id": "6NW800744_1723387502.966236"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-11T15:15:02.553Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 5865
+  },
+  {
+    "metadata": {
+      "site_name": "Park Road North SO",
+      "site_id": "6NW801668",
+      "nearby": false,
+      "event_id": "6NW801668_1723385702.600108"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-11T14:45:02.966Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 5835
+  },
+  {
+    "metadata": {
+      "site_name": "THE SLACK CSO (TE 010)",
+      "site_id": "6NW800235",
+      "nearby": false,
+      "event_id": "6NW800235_1723378502.46412"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-11T14:15:02.600Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 5805
+  },
+  {
+    "metadata": {
+      "site_name": "Mayfield SO",
+      "site_id": "6NW801195",
+      "nearby": false,
+      "event_id": "6NW801195_1723370403.253241"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-11T12:15:02.464Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 5685
+  },
+  {
+    "metadata": {
+      "site_name": "Park Head Storage Tank SO",
+      "site_id": "6NW800286",
+      "nearby": false,
+      "event_id": "6NW800286_1723367703.390744"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-11T10:00:03.253Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 5550
+  },
+  {
+    "metadata": {
+      "site_name": "BUTTERKNOWLE CSO 2",
+      "site_id": "6NW000029",
+      "nearby": false,
+      "event_id": "6NW000029_1723302002.551674"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-11T09:15:03.391Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 5505
+  },
+  {
+    "metadata": {
+      "site_name": "RAMSHAW SEWAGE TREATMENT WORKS",
+      "site_id": "6NW800731",
+      "nearby": false,
+      "event_id": "6NW800731_1723300202.82115"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-10T15:00:02.551Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 4410
+  },
+  {
+    "metadata": {
+      "site_name": "Vinovium STW SO",
+      "site_id": "6NW800744",
+      "nearby": false,
+      "event_id": "6NW800744_1723298403.201135"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-10T14:30:02.821Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 4380
+  },
+  {
+    "metadata": {
+      "site_name": "Stanhope STW SO",
+      "site_id": "6NW800712",
+      "nearby": false,
+      "event_id": "6NW800712_1723291203.013674"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-10T14:00:03.201Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 4350
+  },
+  {
+    "metadata": {
+      "site_name": "THE SLACK CSO (TE 010)",
+      "site_id": "6NW800235",
+      "nearby": false,
+      "event_id": "6NW800235_1723283102.99168"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-10T12:00:03.014Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 4230
+  },
+  {
+    "metadata": {
+      "site_name": "Mayfield SO",
+      "site_id": "6NW801195",
+      "nearby": false,
+      "event_id": "6NW801195_1723281302.46905"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-10T09:45:02.991Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 4095
+  },
+  {
+    "metadata": {
+      "site_name": "Park Head Storage Tank SO",
+      "site_id": "6NW800286",
+      "nearby": false,
+      "event_id": "6NW800286_1723230002.914491"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-10T09:15:02.469Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 4065
+  },
+  {
+    "metadata": {
+      "site_name": "Wear Chare SO",
+      "site_id": "6NW801136",
+      "nearby": false,
+      "event_id": "6NW801136_1722487499.0"
+    },
+    "event_start": "2024-08-01T04:44:59.000Z",
+    "event_end": "2024-08-09T19:00:02.915Z",
+    "event_type": "spill",
+    "event_duration_mins": 12376
+  },
+  {
+    "metadata": {
+      "site_name": "Wear Chare SO",
+      "site_id": "6NW801136",
+      "nearby": false,
+      "event_id": "6NW801136_1722487499.0"
+    },
+    "event_start": "2024-08-01T04:44:59.000Z",
+    "event_end": "2024-08-09T15:00:03.074Z",
+    "event_type": "spill",
+    "event_duration_mins": 12136
+  },
+  {
+    "metadata": {
+      "site_name": "BUTTERKNOWLE CSO 2",
+      "site_id": "6NW000029",
+      "nearby": false,
+      "event_id": "6NW000029_1723212903.07859"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-09T14:45:02.749Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 2955
+  },
+  {
+    "metadata": {
+      "site_name": "RAMSHAW SEWAGE TREATMENT WORKS",
+      "site_id": "6NW800731",
+      "nearby": false,
+      "event_id": "6NW800731_1723212002.697439"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-09T14:15:03.078Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 2925
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(2)",
+      "nearby": false,
+      "event_id": "6NW800753(2)_1721158363.0"
+    },
+    "event_start": "2024-07-08T13:46:57.000Z",
+    "event_end": "2024-08-09T13:45:02.291Z",
+    "event_type": "spill",
+    "event_duration_mins": 46079
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(2)",
+      "nearby": false,
+      "event_id": "6NW800753(2)_1721158363.0"
+    },
+    "event_start": "2024-07-16T19:32:43.000Z",
+    "event_end": "2024-08-09T12:00:02.544Z",
+    "event_type": "spill",
+    "event_duration_mins": 34108
+  },
+  {
+    "metadata": {
+      "site_name": "Stanhope STW SO",
+      "site_id": "6NW800712",
+      "nearby": false,
+      "event_id": "6NW800712_1723195802.225385"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-09T11:45:02.889Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 2775
+  },
+  {
+    "metadata": {
+      "site_name": "THE SLACK CSO (TE 010)",
+      "site_id": "6NW800235",
+      "nearby": false,
+      "event_id": "6NW800235_1723194003.206327"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-09T09:30:02.226Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 2640
+  },
+  {
+    "metadata": {
+      "site_name": "Mayfield SO",
+      "site_id": "6NW801195",
+      "nearby": false,
+      "event_id": "6NW801195_1723193102.809505"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-09T09:00:03.206Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 2610
+  },
+  {
+    "metadata": {
+      "site_name": "Wear Chare SO",
+      "site_id": "6NW801136",
+      "nearby": false,
+      "event_id": "6NW801136_1723187702.337885"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-09T08:45:02.809Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 2595
+  },
+  {
+    "metadata": {
+      "site_name": "Barkers Haugh No 5 SO Prebends Bridge",
+      "site_id": "6NW801265",
+      "nearby": true,
+      "event_id": "6NW801265_1698341400.0"
+    },
+    "event_start": "2023-10-26T17:30:00.000Z",
+    "event_end": "2024-08-09T07:15:02.338Z",
+    "event_type": "spill",
+    "event_duration_mins": 414105
+  },
+  {
+    "metadata": {
+      "site_name": "Barkers Haugh No 5 SO Prebends Bridge",
+      "site_id": "6NW801265",
+      "nearby": true,
+      "event_id": "6NW801265_1698341400.0"
+    },
+    "event_start": "2023-10-26T17:30:00.000Z",
+    "event_end": "2024-08-09T03:30:02.711Z",
+    "event_type": "spill",
+    "event_duration_mins": 413880
+  },
+  {
+    "metadata": {
+      "site_name": "Escomb SPS SO",
+      "site_id": "6NW801074",
+      "nearby": false,
+      "event_id": "6NW801074_1722488400.0"
+    },
+    "event_start": "2024-08-01T05:00:00.000Z",
+    "event_end": "2024-08-09T03:15:02.543Z",
+    "event_type": "spill",
+    "event_duration_mins": 11415
+  },
+  {
+    "metadata": {
+      "site_name": "Escomb SPS SO",
+      "site_id": "6NW801074",
+      "nearby": false,
+      "event_id": "6NW801074_1722488400.0"
+    },
+    "event_start": "2024-08-01T05:00:00.000Z",
+    "event_end": "2024-08-09T02:00:02.610Z",
+    "event_type": "spill",
+    "event_duration_mins": 11340
+  },
+  {
+    "metadata": {
+      "site_name": "Pelaw Wood Sewer, No 1 Baths Bridge SO",
+      "site_id": "6NW450106",
+      "nearby": true,
+      "event_id": "6NW450106_1722601799.0"
+    },
+    "event_start": "2024-08-02T12:29:59.000Z",
+    "event_end": "2024-08-09T01:45:02.381Z",
+    "event_type": "spill",
+    "event_duration_mins": 9436
+  },
+  {
+    "metadata": {
+      "site_name": "Pelaw Wood Sewer, No 1 Baths Bridge SO",
+      "site_id": "6NW450106",
+      "nearby": true,
+      "event_id": "6NW450106_1722601799.0"
+    },
+    "event_start": "2024-08-02T12:29:59.000Z",
+    "event_end": "2024-08-08T20:30:03.354Z",
+    "event_type": "spill",
+    "event_duration_mins": 9121
+  },
+  {
+    "metadata": {
+      "site_name": "Rough Lea Lane SO",
+      "site_id": "6NW800261",
+      "nearby": false,
+      "event_id": "6NW800261_1716685200.0"
+    },
+    "event_start": "2024-05-26T01:00:00.000Z",
+    "event_end": "2024-08-08T20:15:02.625Z",
+    "event_type": "spill",
+    "event_duration_mins": 107715
+  },
+  {
+    "metadata": {
+      "site_name": "Rough Lea Lane SO",
+      "site_id": "6NW800261",
+      "nearby": false,
+      "event_id": "6NW800261_1716685200.0"
+    },
+    "event_start": "2024-05-26T01:00:00.000Z",
+    "event_end": "2024-08-08T20:00:03.065Z",
+    "event_type": "spill",
+    "event_duration_mins": 107700
+  },
+  {
+    "metadata": {
+      "site_name": "Hall Farm SO",
+      "site_id": "6NW800289",
+      "nearby": false,
+      "event_id": "6NW800289_1714998600.0"
+    },
+    "event_start": "2024-05-06T12:30:00.000Z",
+    "event_end": "2024-08-08T19:45:02.420Z",
+    "event_type": "spill",
+    "event_duration_mins": 135795
+  },
+  {
+    "metadata": {
+      "site_name": "Hall Farm SO",
+      "site_id": "6NW800289",
+      "nearby": false,
+      "event_id": "6NW800289_1714998600.0"
+    },
+    "event_start": "2024-05-06T12:30:00.000Z",
+    "event_end": "2024-08-08T19:30:02.788Z",
+    "event_type": "spill",
+    "event_duration_mins": 135780
+  },
+  {
+    "metadata": {
+      "site_name": "Priestley Crescent SO",
+      "site_id": "6NW800401",
+      "nearby": false,
+      "event_id": "6NW800401_1722081599.0"
+    },
+    "event_start": "2024-07-27T11:59:59.000Z",
+    "event_end": "2024-08-08T19:15:02.465Z",
+    "event_type": "spill",
+    "event_duration_mins": 17716
+  },
+  {
+    "metadata": {
+      "site_name": "Priestley Crescent SO",
+      "site_id": "6NW800401",
+      "nearby": false,
+      "event_id": "6NW800401_1722081599.0"
+    },
+    "event_start": "2024-07-27T11:59:59.000Z",
+    "event_end": "2024-08-08T19:00:03.193Z",
+    "event_type": "spill",
+    "event_duration_mins": 17701
+  },
+  {
+    "metadata": {
+      "site_name": "Cockfield STW SO",
+      "site_id": "6NW800726",
+      "nearby": false,
+      "event_id": "6NW800726_1720526189.0"
+    },
+    "event_start": "2024-07-09T11:56:29.000Z",
+    "event_end": "2024-08-08T18:45:02.552Z",
+    "event_type": "spill",
+    "event_duration_mins": 43609
+  },
+  {
+    "metadata": {
+      "site_name": "Cockfield STW SO",
+      "site_id": "6NW800726",
+      "nearby": false,
+      "event_id": "6NW800726_1720526189.0"
+    },
+    "event_start": "2024-07-09T11:56:29.000Z",
+    "event_end": "2024-08-08T18:30:03.087Z",
+    "event_type": "spill",
+    "event_duration_mins": 43594
+  },
+  {
+    "metadata": {
+      "site_name": "Willington STW SO",
+      "site_id": "6NW800746",
+      "nearby": false,
+      "event_id": "6NW800746_1720642500.0"
+    },
+    "event_start": "2024-07-10T20:15:00.000Z",
+    "event_end": "2024-08-08T18:15:02.524Z",
+    "event_type": "spill",
+    "event_duration_mins": 41640
+  },
+  {
+    "metadata": {
+      "site_name": "Willington STW SO",
+      "site_id": "6NW800746",
+      "nearby": false,
+      "event_id": "6NW800746_1720642500.0"
+    },
+    "event_start": "2024-07-10T20:15:00.000Z",
+    "event_end": "2024-08-08T18:00:04.157Z",
+    "event_type": "spill",
+    "event_duration_mins": 41625
+  },
+  {
+    "metadata": {
+      "site_name": "Tudhoe Mill Sewage Treatment Works SO Inlet 2",
+      "site_id": "6NW800759",
+      "nearby": false,
+      "event_id": "6NW800759_1722513245.0"
+    },
+    "event_start": "2024-08-01T11:54:05.000Z",
+    "event_end": "2024-08-08T17:45:02.613Z",
+    "event_type": "spill",
+    "event_duration_mins": 10431
+  },
+  {
+    "metadata": {
+      "site_name": "Tudhoe Mill Sewage Treatment Works SO Inlet 2",
+      "site_id": "6NW800759",
+      "nearby": false,
+      "event_id": "6NW800759_1722513245.0"
+    },
+    "event_start": "2024-08-01T11:54:05.000Z",
+    "event_end": "2024-08-08T17:30:02.845Z",
+    "event_type": "spill",
+    "event_duration_mins": 10416
+  },
+  {
+    "metadata": {
+      "site_name": "Vinovium SO A27",
+      "site_id": "6NW801099",
+      "nearby": false,
+      "event_id": "6NW801099_1722489300.0"
+    },
+    "event_start": "2024-08-01T05:15:00.000Z",
+    "event_end": "2024-08-08T17:15:03.560Z",
+    "event_type": "spill",
+    "event_duration_mins": 10800
+  },
+  {
+    "metadata": {
+      "site_name": "Vinovium SO A27",
+      "site_id": "6NW801099",
+      "nearby": false,
+      "event_id": "6NW801099_1722489300.0"
+    },
+    "event_start": "2024-08-01T05:15:00.000Z",
+    "event_end": "2024-08-08T17:00:02.402Z",
+    "event_type": "spill",
+    "event_duration_mins": 10785
+  },
+  {
+    "metadata": {
+      "site_name": "Vinovium SOs A17, A18, A19 & A21",
+      "site_id": "6NW801129",
+      "nearby": false,
+      "event_id": "6NW801129_1722487500.0"
+    },
+    "event_start": "2024-08-01T04:45:00.000Z",
+    "event_end": "2024-08-08T16:45:02.966Z",
+    "event_type": "spill",
+    "event_duration_mins": 10800
+  },
+  {
+    "metadata": {
+      "site_name": "Vinovium SOs A17, A18, A19 & A21",
+      "site_id": "6NW801129",
+      "nearby": false,
+      "event_id": "6NW801129_1722487500.0"
+    },
+    "event_start": "2024-08-01T04:45:00.000Z",
+    "event_end": "2024-08-08T16:30:02.469Z",
+    "event_type": "spill",
+    "event_duration_mins": 10785
+  },
+  {
+    "metadata": {
+      "site_name": "Gib Chare Housing Development Vinovium SO",
+      "site_id": "6NW801133",
+      "nearby": false,
+      "event_id": "6NW801133_1722487500.0"
+    },
+    "event_start": "2024-08-01T04:45:00.000Z",
+    "event_end": "2024-08-08T16:15:02.975Z",
+    "event_type": "spill",
+    "event_duration_mins": 10770
+  },
+  {
+    "metadata": {
+      "site_name": "Gib Chare Housing Development Vinovium SO",
+      "site_id": "6NW801133",
+      "nearby": false,
+      "event_id": "6NW801133_1722487500.0"
+    },
+    "event_start": "2024-08-01T04:45:00.000Z",
+    "event_end": "2024-08-08T16:00:02.404Z",
+    "event_type": "spill",
+    "event_duration_mins": 10755
+  },
+  {
+    "metadata": {
+      "site_name": "Snowdons Farm SO",
+      "site_id": "6NW800312",
+      "nearby": false,
+      "event_id": "6NW800312_1720966145.0"
+    },
+    "event_start": "2024-07-14T14:09:05.000Z",
+    "event_end": "2024-08-08T15:45:03.035Z",
+    "event_type": "spill",
+    "event_duration_mins": 36096
+  },
+  {
+    "metadata": {
+      "site_name": "Snowdons Farm SO",
+      "site_id": "6NW800312",
+      "nearby": false,
+      "event_id": "6NW800312_1720966145.0"
+    },
+    "event_start": "2024-07-14T14:09:05.000Z",
+    "event_end": "2024-08-08T15:30:02.477Z",
+    "event_type": "spill",
+    "event_duration_mins": 36081
+  },
+  {
+    "metadata": {
+      "site_name": "Snowdons Farm SO",
+      "site_id": "6NW800312",
+      "nearby": false,
+      "event_id": "6NW800312_1723129202.562941"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-08T15:15:02.840Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 1545
+  },
+  {
+    "metadata": {
+      "site_name": "Witton Gilbert STW SO",
+      "site_id": "6NW801159",
+      "nearby": false,
+      "event_id": "6NW801159_1721152800.0"
+    },
+    "event_start": "2024-07-16T18:00:00.000Z",
+    "event_end": "2024-08-08T15:00:02.563Z",
+    "event_type": "spill",
+    "event_duration_mins": 32940
+  },
+  {
+    "metadata": {
+      "site_name": "Witton Gilbert STW SO",
+      "site_id": "6NW801159",
+      "nearby": false,
+      "event_id": "6NW801159_1721152800.0"
+    },
+    "event_start": "2024-07-16T18:00:00.000Z",
+    "event_end": "2024-08-08T14:45:02.902Z",
+    "event_type": "spill",
+    "event_duration_mins": 32925
+  },
+  {
+    "metadata": {
+      "site_name": "Stockton Rd & Quarry Heads Ln SOs",
+      "site_id": "6NW801264",
+      "nearby": true,
+      "event_id": "6NW801264_1689858206.0"
+    },
+    "event_start": "2023-07-20T13:03:26.000Z",
+    "event_end": "2024-08-08T14:30:02.400Z",
+    "event_type": "spill",
+    "event_duration_mins": 554487
+  },
+  {
+    "metadata": {
+      "site_name": "Stockton Rd & Quarry Heads Ln SOs",
+      "site_id": "6NW801264",
+      "nearby": true,
+      "event_id": "6NW801264_1689858206.0"
+    },
+    "event_start": "2023-07-20T13:03:26.000Z",
+    "event_end": "2024-08-08T14:15:02.895Z",
+    "event_type": "spill",
+    "event_duration_mins": 554472
+  },
+  {
+    "metadata": {
+      "site_name": "BUTTERKNOWLE CSO 2",
+      "site_id": "6NW000029",
+      "nearby": false,
+      "event_id": "6NW000029_1723124702.949661"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-08T14:00:02.459Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 1470
+  },
+  {
+    "metadata": {
+      "site_name": "Shields Road SO",
+      "site_id": "6NW801282",
+      "nearby": false,
+      "event_id": "6NW801282_1721150099.0"
+    },
+    "event_start": "2024-07-16T17:14:59.000Z",
+    "event_end": "2024-08-08T13:45:02.949Z",
+    "event_type": "spill",
+    "event_duration_mins": 32911
+  },
+  {
+    "metadata": {
+      "site_name": "Laurel Avenue SO",
+      "site_id": "6NW801309",
+      "nearby": true,
+      "event_id": "6NW801309_1721153700.0"
+    },
+    "event_start": "2024-07-16T18:15:00.000Z",
+    "event_end": "2024-08-08T13:30:02.493Z",
+    "event_type": "spill",
+    "event_duration_mins": 32835
+  },
+  {
+    "metadata": {
+      "site_name": "Laurel Avenue SO",
+      "site_id": "6NW801309",
+      "nearby": true,
+      "event_id": "6NW801309_1721153700.0"
+    },
+    "event_start": "2024-07-16T18:15:00.000Z",
+    "event_end": "2024-08-08T13:15:02.763Z",
+    "event_type": "spill",
+    "event_duration_mins": 32820
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(2)",
+      "nearby": false,
+      "event_id": "6NW800753(2)_1723121102.711786"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-08T13:00:03.315Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 1410
+  },
+  {
+    "metadata": {
+      "site_name": "Woodhouse Lane Library SO",
+      "site_id": "6NW801678",
+      "nearby": false,
+      "event_id": "6NW801678_1722127500.0"
+    },
+    "event_start": "2024-07-28T00:45:00.000Z",
+    "event_end": "2024-08-08T12:45:02.711Z",
+    "event_type": "spill",
+    "event_duration_mins": 16560
+  },
+  {
+    "metadata": {
+      "site_name": "Woodhouse Lane Library SO",
+      "site_id": "6NW801678",
+      "nearby": false,
+      "event_id": "6NW801678_1722127500.0"
+    },
+    "event_start": "2024-07-28T00:45:00.000Z",
+    "event_end": "2024-08-08T12:30:03.129Z",
+    "event_type": "spill",
+    "event_duration_mins": 16545
+  },
+  {
+    "metadata": {
+      "site_name": "Snowdons Farm SO",
+      "site_id": "6NW800312",
+      "nearby": false,
+      "event_id": "6NW800312_1720966145.0"
+    },
+    "event_start": "2024-07-14T14:09:05.000Z",
+    "event_end": "2024-08-08T12:15:02.503Z",
+    "event_type": "spill",
+    "event_duration_mins": 35886
+  },
+  {
+    "metadata": {
+      "site_name": "Snowdons Farm SO",
+      "site_id": "6NW800312",
+      "nearby": false,
+      "event_id": "6NW800312_1720966145.0"
+    },
+    "event_start": "2024-07-14T14:09:05.000Z",
+    "event_end": "2024-08-08T12:00:02.894Z",
+    "event_type": "spill",
+    "event_duration_mins": 35871
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(2)",
+      "nearby": false,
+      "event_id": "6NW800753(2)_1721158363.0"
+    },
+    "event_start": "2024-07-16T19:32:43.000Z",
+    "event_end": "2024-08-08T11:45:03.273Z",
+    "event_type": "spill",
+    "event_duration_mins": 32653
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(2)",
+      "nearby": false,
+      "event_id": "6NW800753(2)_1721158363.0"
+    },
+    "event_start": "2024-07-16T19:32:43.000Z",
+    "event_end": "2024-08-08T11:30:02.674Z",
+    "event_type": "spill",
+    "event_duration_mins": 32638
+  },
+  {
+    "metadata": {
+      "site_name": "Snowdons Farm SO",
+      "site_id": "6NW800312",
+      "nearby": false,
+      "event_id": "6NW800312_1720966145.0"
+    },
+    "event_start": "2024-07-14T14:09:05.000Z",
+    "event_end": "2024-08-08T11:15:03.215Z",
+    "event_type": "spill",
+    "event_duration_mins": 35826
+  },
+  {
+    "metadata": {
+      "site_name": "Snowdons Farm SO",
+      "site_id": "6NW800312",
+      "nearby": false,
+      "event_id": "6NW800312_1720966145.0"
+    },
+    "event_start": "2024-07-14T14:09:05.000Z",
+    "event_end": "2024-08-08T11:00:02.537Z",
+    "event_type": "spill",
+    "event_duration_mins": 35811
+  },
+  {
+    "metadata": {
+      "site_name": "Washington STW SO",
+      "site_id": "6NW800781",
+      "nearby": false,
+      "event_id": "6NW800781_1721001245.0"
+    },
+    "event_start": "2024-07-14T23:54:05.000Z",
+    "event_end": "2024-08-08T10:45:03.141Z",
+    "event_type": "spill",
+    "event_duration_mins": 35211
+  },
+  {
+    "metadata": {
+      "site_name": "Washington STW SO",
+      "site_id": "6NW800781",
+      "nearby": false,
+      "event_id": "6NW800781_1721001245.0"
+    },
+    "event_start": "2024-07-14T23:54:05.000Z",
+    "event_end": "2024-08-08T10:30:02.660Z",
+    "event_type": "spill",
+    "event_duration_mins": 35196
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(1)",
+      "nearby": false,
+      "event_id": "6NW800753(1)_1720942715.0"
+    },
+    "event_start": "2024-07-14T07:38:35.000Z",
+    "event_end": "2024-08-08T10:15:03.319Z",
+    "event_type": "spill",
+    "event_duration_mins": 36157
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(1)",
+      "nearby": false,
+      "event_id": "6NW800753(1)_1720942715.0"
+    },
+    "event_start": "2024-07-14T07:38:35.000Z",
+    "event_end": "2024-08-08T10:00:02.783Z",
+    "event_type": "spill",
+    "event_duration_mins": 36142
+  },
+  {
+    "metadata": {
+      "site_name": "Church Street Du026",
+      "site_id": "6NW801659",
+      "nearby": true,
+      "event_id": "6NW801659_1716740099.0"
+    },
+    "event_start": "2024-05-26T16:14:59.000Z",
+    "event_end": "2024-08-08T09:45:03.196Z",
+    "event_type": "spill",
+    "event_duration_mins": 106171
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(2)",
+      "nearby": false,
+      "event_id": "6NW800753(2)_1723108503.150583"
+    },
+    "event_start": "2024-08-08T09:15:03.150Z",
+    "event_end": "2024-08-08T09:30:02.434Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 15
+  },
+  {
+    "metadata": {
+      "site_name": "Westgate Caravan Site SO",
+      "site_id": "6NW801680",
+      "nearby": false,
+      "event_id": "6NW801680_1713413614.0"
+    },
+    "event_start": "2024-04-18T04:13:34.000Z",
+    "event_end": "2024-08-08T09:15:03.150Z",
+    "event_type": "spill",
+    "event_duration_mins": 161582
+  },
+  {
+    "metadata": {
+      "site_name": "Westgate Caravan Site SO",
+      "site_id": "6NW801680",
+      "nearby": false,
+      "event_id": "6NW801680_1713413614.0"
+    },
+    "event_start": "2024-04-18T04:13:34.000Z",
+    "event_end": "2024-08-08T09:00:03.131Z",
+    "event_type": "spill",
+    "event_duration_mins": 161567
+  },
+  {
+    "metadata": {
+      "site_name": "THE SLACK CSO (TE 010)",
+      "site_id": "6NW800235",
+      "nearby": false,
+      "event_id": "6NW800235_1723038302.68205"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-08T08:45:03.622Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 1155
+  },
+  {
+    "metadata": {
+      "site_name": "BUTTERKNOWLE CSO 2",
+      "site_id": "6NW000029",
+      "nearby": false,
+      "event_id": "6NW000029_1723037403.023981"
+    },
+    "event_start": "2024-08-07T13:30:03.023Z",
+    "event_end": "2024-08-07T13:45:02.682Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 15
+  },
+  {
+    "metadata": {
+      "site_name": "Grange Bank SO",
+      "site_id": "6NW801044",
+      "nearby": false,
+      "event_id": "6NW801044_1712662200.0"
+    },
+    "event_start": "2024-04-09T11:30:00.000Z",
+    "event_end": "2024-08-07T13:30:03.023Z",
+    "event_type": "spill",
+    "event_duration_mins": 172920
+  },
+  {
+    "metadata": {
+      "site_name": "Grange Bank SO",
+      "site_id": "6NW801044",
+      "nearby": false,
+      "event_id": "6NW801044_1712662200.0"
+    },
+    "event_start": "2024-04-09T11:30:00.000Z",
+    "event_end": "2024-08-06T15:00:03.275Z",
+    "event_type": "spill",
+    "event_duration_mins": 171570
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(1)",
+      "nearby": false,
+      "event_id": "6NW800753(1)_1720942715.0"
+    },
+    "event_start": "2024-07-14T07:38:35.000Z",
+    "event_end": "2024-08-06T14:45:03.272Z",
+    "event_type": "spill",
+    "event_duration_mins": 33547
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(1)",
+      "nearby": false,
+      "event_id": "6NW800753(1)_1720942715.0"
+    },
+    "event_start": "2024-07-14T07:38:35.000Z",
+    "event_end": "2024-08-06T14:30:02.780Z",
+    "event_type": "spill",
+    "event_duration_mins": 33532
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(2)",
+      "nearby": false,
+      "event_id": "6NW800753(2)_1721158363.0"
+    },
+    "event_start": "2024-07-16T19:32:43.000Z",
+    "event_end": "2024-08-06T14:15:02.409Z",
+    "event_type": "spill",
+    "event_duration_mins": 29923
+  },
+  {
+    "metadata": {
+      "site_name": "WITTON GILBERT STW",
+      "site_id": "6NW800753(2)",
+      "nearby": false,
+      "event_id": "6NW800753(2)_1721158363.0"
+    },
+    "event_start": "2024-07-16T19:32:43.000Z",
+    "event_end": "2024-08-06T14:00:02.972Z",
+    "event_type": "spill",
+    "event_duration_mins": 29908
+  },
+  {
+    "metadata": {
+      "site_name": "THE SLACK CSO (TE 010)",
+      "site_id": "6NW800235",
+      "nearby": false,
+      "event_id": "6NW800235_1722951002.781246"
+    },
+    "event_start": "2024-08-06T13:30:02.781Z",
+    "event_end": "2024-08-06T13:45:02.664Z",
+    "event_type": "monitor offline",
+    "event_duration_mins": 15
+  }
+]

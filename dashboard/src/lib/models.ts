@@ -75,6 +75,7 @@ export const SewageEventSchema = z.object({
 	event_start: z.coerce.date(),
 	event_end: z.coerce.date(),
 	event_type: z.union([z.literal('spill'), z.literal('monitor offline')]),
+	event_duration_mins: z.number(),
 });
 
 export type SewageEvent = z.infer<typeof SewageEventSchema>;
