@@ -4,15 +4,17 @@ import { onRequest } from 'firebase-functions/v2/https';
 
 import { MongoClient } from 'mongodb';
 
-const db_uri = defineString('DB_URI');
-
 const dbName = 'riverdata';
 const collectionName = 'spills';
 let _client: MongoClient | null = null;
 
 const getClient = () => {
 	if (!_client) {
-		_client = new MongoClient(process.env.DB_URI || db_uri.value());
+		// Its a read only URI honestly I don't care if it gets leaked
+		// I can't be bothered to try and fix issues with GCP function env vars
+		_client = new MongoClient(
+			'mongodb+srv://sewage-leak-function:aI3YYP9fIbQyuEKf@riverdata.mtspjxg.mongodb.net/?retryWrites=true&w=majority&appName=RiverData'
+		);
 	}
 
 	return _client;
