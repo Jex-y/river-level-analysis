@@ -39,4 +39,7 @@ jobs:
         working-directory: ./sewage_leak
         run: npm install && npm run build
       - name: Deploy to Firebase Functions
+        env:
+          DB_URI: ${{ secrets.DB_URI }}
+          TOMORROW_API_KEY: ${{ secrets.TOMORROW_API_KEY }}
         run: firebase deploy --only functions --token ${{ secrets.FIREBASE_CI_TOKEN }} --non-interactive -m "${{ github.event.head_commit.message }}"
