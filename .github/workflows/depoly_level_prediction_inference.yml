@@ -32,4 +32,4 @@ jobs:
         run: python311 -m venv ./venv && source ./venv/bin/activate && pip install -r requirements.txt
 
       - name: Deploy to Firebase Functions
-        run: firebase deploy --only functions --token ${{ secrets.FIREBASE_CI_TOKEN }} --non-interactive -m "${{ github.event.head_commit.message }}"
+        run: firebase deploy --only functions:level_prediction_inference --token ${{ secrets.FIREBASE_CI_TOKEN }} --non-interactive -m "${{ github.event.head_commit.message }}"

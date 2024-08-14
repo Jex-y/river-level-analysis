@@ -36,4 +36,4 @@ jobs:
         run: echo "${{ secrets.DATA_COLLECTION_ENV }}" > .env
 
       - name: Deploy to Firebase Functions
-        run: firebase deploy --only functions --token ${{ secrets.FIREBASE_CI_TOKEN }} --non-interactive -m "${{ github.event.head_commit.message }}"
+        run: firebase deploy --only functions:data_collection --token ${{ secrets.FIREBASE_CI_TOKEN }} --non-interactive -m "${{ github.event.head_commit.message }}"
