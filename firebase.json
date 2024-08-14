@@ -39,7 +39,17 @@
     }
   ],
   "hosting": {
-    "public": "dashboard/dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+    "public": "dashboard-v2/out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }
