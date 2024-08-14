@@ -4,12 +4,12 @@ import {
 } from '@/components/ui/table';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import type { SpillSite } from '@/types';
 import type { ColumnDef, Table as TableType } from '@tanstack/react-table';
-import type { SpillEvent } from '@/types';
 import { flexRender } from '@tanstack/react-table';
 
 type SkeletonRowsProps = {
-  columns: ColumnDef<SpillEvent>[];
+  columns: ColumnDef<SpillSite>[];
   count: number;
 };
 function SkeletonRows({ columns, count }: SkeletonRowsProps) {
@@ -27,7 +27,7 @@ function SkeletonRows({ columns, count }: SkeletonRowsProps) {
 
 
 type EmptyTableProps = {
-  columns: ColumnDef<SpillEvent>[];
+  columns: ColumnDef<SpillSite>[];
   empty_message?: string;
 };
 
@@ -48,7 +48,7 @@ function EmptyTable({
 }
 
 type TableRowsProps = {
-  table: TableType<SpillEvent>;
+  table: TableType<SpillSite>;
 };
 
 function TableRows({ table }: TableRowsProps) {
@@ -67,8 +67,8 @@ function TableRows({ table }: TableRowsProps) {
 }
 
 type TableContentProps = {
-  table: TableType<SpillEvent>;
-  columns: ColumnDef<SpillEvent>[];
+  table: TableType<SpillSite>;
+  columns: ColumnDef<SpillSite>[];
   loading: boolean;
   pageSize: number;
 };
