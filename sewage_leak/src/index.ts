@@ -1,7 +1,10 @@
 import * as logger from 'firebase-functions/logger';
+import { defineString } from 'firebase-functions/params';
 import { onRequest } from 'firebase-functions/v2/https';
 
 import { MongoClient } from 'mongodb';
+
+const db_uri = defineString('DB_URI');
 
 const dbName = 'riverdata';
 const collectionName = 'spills';
@@ -9,13 +12,7 @@ let _client: MongoClient | null = null;
 
 const getClient = () => {
 	if (!_client) {
-		const db_uri = process.env.DB_URI;
-		if (!db_uri) {
-			throw new Error(
-				`DB_URI environment variable is required. process.env: ${JSON.stringify(process.env)}`
-			);
-		}
-		_client = new MongoClient(db_uri);
+		_client = new MongoClient(process.env.DB_URI || db_uri.value());
 	}
 
 	return _client;
