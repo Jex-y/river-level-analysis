@@ -1,13 +1,15 @@
 "use client";
 
-import * as config from './config';
 import type { RiverLevel } from '@/types';
+import * as config from './config';
 
 import {
   ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
 } from '@/components/ui/chart';
 
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from 'recharts';
 
 export function LevelChart({ data }: { data: RiverLevel[] }) {
   return (<ChartContainer
@@ -42,24 +44,56 @@ export function LevelChart({ data }: { data: RiverLevel[] }) {
           (dataMax: number) => Math.max(dataMax + 0.01, config.TYPICAL_HIGH),
         ]}
       />
-      {/* TODO: reimplement tooltip */}
-      {/* <ChartTooltip
-        cursor={true}
+      {config.referenceLines.map(({ label, value }) => (
+        <ReferenceLine
+          key={label}
+          y={value}
+          // stroke="var(--color-reference)"
+          // strokeDasharray="5 5"
+          label={{ value: label, position: 'left' }}
+        />
+      ))}
+      <ChartTooltip
         content={
           <ChartTooltipContent
-            indicator="dot"
-            labelFormatter={(label) => {
-              return new Date(
-                payload[0].payload.timestamp / 1000
-              ).toLocaleTimeString('en-GB', {
+            labelFormatter={(_value, payload) => {
+              const date = new Date(payload[0].payload.timestamp / 1000);
+
+              return new Date(date).toLocaleDateString('en-GB', {
                 weekday: 'short',
+                day: 'numeric',
+                month: 'short',
                 hour: '2-digit',
                 minute: '2-digit',
               });
             }}
+
+            formatter={(value, name) => (
+              <>
+                <div
+                  className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-[--color-bg]"
+                  style={
+                    {
+                      "--color-bg": `var(--color-${name})`,
+                    } as React.CSSProperties
+                  }
+                />
+                {config.chartConfig[name as keyof typeof config.chartConfig]?.label ||
+                  name}
+                <div className="ml-auto flex items-baseline gap-1 font-mono font-medium tabular-nums text-foreground">
+                  {(value as number).toFixed(2)}
+                  <span className="font-normal text-muted-foreground">
+                    m
+                  </span>
+                </div>
+
+              </>
+            )}
           />
         }
-      /> */}
+        cursor={false}
+        defaultIndex={1}
+      />
       <defs>
         <linearGradient id="fillObserved" x1="0" y1="0" x2="0" y2="1">
           <stop

@@ -1,6 +1,6 @@
-import type { LucideIcon } from 'lucide-react';
 import type { Status } from '@/components/ui/status-color-dot';
-
+import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 export type Parameters = {
 	temperature: number;
@@ -15,7 +15,7 @@ export type Parameters = {
 export type ParameterInfo = {
 	label: string;
 	defaultValue?: number;
-	formatFn: (value: number) => string;
+	formatFn: (value: number) => ReactNode;
 	statusFn: (value: number) => Status;
 	icon: LucideIcon;
 };

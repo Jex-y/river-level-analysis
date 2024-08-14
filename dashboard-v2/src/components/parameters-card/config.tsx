@@ -1,6 +1,6 @@
 import { Status } from '@/components/ui/status-color-dot';
 import { CloudFog, Sun, Thermometer, Waves, Wind } from 'lucide-react';
-import type {Parameters, ParameterInfo} from './types';
+import type { ParameterInfo, Parameters } from './types';
 
 // TODO: Implement sunrise and sunset
 
@@ -14,11 +14,28 @@ export const displayOrder: (keyof Parameters)[] = [
 	'riverLevel',
 ];
 
+type ValueWithUnitsProps = {
+	value: number;
+	fractionDigits?: number;
+	unit: string;
+};
+
+function ValueWithUnits({ value, fractionDigits = 1, unit }: ValueWithUnitsProps) {
+	return (
+		<div className="ml-auto flex justify-between items-baseline gap-1.5 font-mono font-medium tabular-nums text-foreground">
+			{value.toFixed(fractionDigits)}
+			<span className="font-normal text-muted-foreground">
+				{unit}
+			</span>
+		</div>
+	);
+}
+
 export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 	temperature: {
 		label: 'Temp',
 		icon: Thermometer,
-		formatFn: (value: number) => `${value.toFixed(1)} °C`,
+		formatFn: (value: number) => <ValueWithUnits value={value} unit="°C" />,
 		statusFn: (value: number) => {
 			if (value < -5) {
 				return Status.Bad;
@@ -42,7 +59,7 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 	temperatureApparent: {
 		icon: Thermometer,
 		label: 'Feels Like',
-		formatFn: (value: number) => `${value.toFixed(1)} °C`,
+		formatFn: (value: number) => <ValueWithUnits value={value} unit="°C" />,
 		statusFn: (value: number) => {
 			if (value < -5) {
 				return Status.Bad;
@@ -84,7 +101,7 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 	visibility: {
 		label: 'Visibility',
 		icon: CloudFog,
-		formatFn: (value: number) => `${value.toFixed(1)} km`,
+		formatFn: (value: number) => <ValueWithUnits value={value} unit="km" />,
 		statusFn: (value: number) => {
 			if (value < 1) {
 				return Status.Bad;
@@ -100,7 +117,7 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 	windGust: {
 		label: 'Wind Gust',
 		icon: Wind,
-		formatFn: (value: number) => `${value.toFixed(1)} km/h`,
+		formatFn: (value: number) => <ValueWithUnits value={value} unit="km/h" />,
 		statusFn: (value: number) => {
 			const value_mph = value * 0.621371;
 
@@ -120,7 +137,7 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 	windSpeed: {
 		label: 'Wind Speed',
 		icon: Wind,
-		formatFn: (value: number) => `${value.toFixed(1)} km/h`,
+		formatFn: (value: number) => <ValueWithUnits value={value} unit="km/h" />,
 		statusFn: (value: number) => {
 			const value_mph = value * 0.621371;
 
@@ -138,7 +155,7 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
 	riverLevel: {
 		label: 'River Level',
 		icon: Waves,
-		formatFn: (value: number) => `${value.toFixed(2)} m`,
+		formatFn: (value: number) => <ValueWithUnits value={value} unit="m" />,
 		statusFn: (value: number) => {
 			if (value < 0.65) {
 				return Status.Good;

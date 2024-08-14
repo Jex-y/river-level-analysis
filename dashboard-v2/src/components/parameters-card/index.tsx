@@ -1,10 +1,10 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SkeletonStatusDot, StatusDot } from '@/components/ui/status-color-dot';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useParameters } from './hooks';
+import { SkeletonStatusDot, StatusDot } from '@/components/ui/status-color-dot';
 import { displayOrder, parameterInfo } from './config';
+import { useParameters } from './hooks';
 
 export function ParametersCard() {
   const parameters = useParameters();
@@ -12,7 +12,8 @@ export function ParametersCard() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Conditions</CardTitle>
+        <CardTitle>Current Conditions</CardTitle>
+        <CardDescription>Status is based on DCR regulations.</CardDescription>
       </CardHeader>
       {displayOrder.map((name) => {
         const { label, formatFn, statusFn, icon: Icon } = parameterInfo[name];

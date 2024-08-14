@@ -21,7 +21,7 @@ export function useDataTable<SpillEvent>(
 			desc: true,
 		},
 		{
-			id: 'eventEnd',
+			id: 'totalSpillDuration',
 			desc: true,
 		},
 	]);
