@@ -1,16 +1,17 @@
-import { cn } from '@/lib/utils';
-import { ArrowUpDown } from 'lucide-react';
-import type { Column } from '@tanstack/react-table';
-import type { SpillEvent } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import type { SpillSite } from '@/types';
+import type { Column } from '@tanstack/react-table';
+import { ArrowUpDown } from 'lucide-react';
 
 export const SortingButton = ({
   column,
   label,
   labelClassName = '',
-}: { column: Column<SpillEvent, unknown>; label: string; labelClassName?: string }) => (
+}: { column: Column<SpillSite, unknown>; label: string; labelClassName?: string }) => (
   <Button
+    className='p-0'
     variant="ghost"
     onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
   >

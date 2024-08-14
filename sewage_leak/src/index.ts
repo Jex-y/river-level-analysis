@@ -9,11 +9,13 @@ let _client: MongoClient | null = null;
 
 const getClient = () => {
 	if (!_client) {
-		const url = process.env.DB_URI;
-		if (!url) {
-			throw new Error('DB_URI environment variable is required');
+		const db_uri = process.env.DB_URI;
+		if (!db_uri) {
+			throw new Error(
+				`DB_URI environment variable is required. process.env: ${JSON.stringify(process.env)}`
+			);
 		}
-		_client = new MongoClient(url);
+		_client = new MongoClient(db_uri);
 	}
 
 	return _client;
@@ -28,13 +30,6 @@ const fetch_spill_sites = async () => {
 
 	const results = await collection
 		.aggregate([
-			{
-				$match: {
-					event_end: {
-						$gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-					},
-				},
-			},
 			{
 				$addFields: {
 					event_duration_mins: {
@@ -68,6 +63,14 @@ const fetch_spill_sites = async () => {
 								input: '$$ROOT',
 							},
 						},
+					},
+				},
+			},
+			// Keep only events in the past week
+			{
+				$match: {
+					'events.event_end': {
+						$gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
 					},
 				},
 			},

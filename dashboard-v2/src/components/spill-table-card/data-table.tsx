@@ -16,15 +16,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import type { SpillEvent } from '@/types';
+import type { SpillSite } from '@/types';
+import { PaginationControls, PaginationInfo } from './pagination';
 import { TableContent } from './table-content';
 import { useDataTable } from './useDataTable';
-import { PaginationControls, PaginationInfo } from './pagination';
 
 
 interface DataTableProps {
-  columns: ColumnDef<SpillEvent>[];
-  data: SpillEvent[];
+  columns: ColumnDef<SpillSite>[];
+  data: SpillSite[];
   empty_message?: string;
   loading?: boolean;
 }

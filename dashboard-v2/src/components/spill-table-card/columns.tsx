@@ -1,22 +1,22 @@
+import { type Status, StatusDot } from '@/components/ui/status-color-dot';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { type Status, StatusDot } from '@/components/ui/status-color-dot';
-import { formatDate, formatDuration, statusFn } from './lib';
-import { TooltipExplanation, SortingButton } from './sub-components';
-import type { SpillEvent } from '@/types';
+import type { SpillSite } from '@/types';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Check, X as Cross } from 'lucide-react';
+import { formatDate, formatDuration, statusFn } from './lib';
+import { SortingButton, TooltipExplanation } from './sub-components';
 
-export const columns: ColumnDef<SpillEvent>[] = [
+export const columns: ColumnDef<SpillSite>[] = [
   {
     id: 'siteName',
     accessorKey: 'metadata.site_name',
     cell: ({ getValue }) => <span
-      className='max-md:w-32 text-nowrap truncate inline-block'
+      className='sm:w-48 text-nowrap truncate inline-block'
     >{getValue() as string}</span>,
     enableSorting: false,
     header: () => (
@@ -55,36 +55,53 @@ export const columns: ColumnDef<SpillEvent>[] = [
     ),
     cell: ({ getValue }) => {
       const nearby = getValue() as boolean;
-      return nearby ? (
-        <Check />
-      ) : (
-        <Cross />
+      return (
+        <div className="flex items-center justify-center">
+          {nearby ? (
+            <Check />
+          ) : (
+            <Cross />
+          )}
+        </div>
       );
     },
+
   },
   {
-    id: 'eventStart',
-    accessorKey: 'event_start',
-    cell: ({ getValue }) => <span>{formatDate(getValue() as Date)}</span>,
+    id: 'recentSpill',
+    accessorFn: (row) => {
+      const spills = row.events.filter(
+        (event) => event.event_type === 'spill'
+      );
+
+      if (spills.length === 0) {
+        return "N/A";
+      }
+
+      return new Date(
+        Math.max(
+          ...spills
+            .map((event) => event.event_end.getTime())
+        ));
+    },
+    cell: ({ getValue }) => formatDate(getValue() as Date | string),
     sortingFn: 'datetime',
     header: ({ column }) => (
-      <SortingButton column={column} label="Start Date" />
+      <SortingButton column={column} label="Most Recent Spill" />
     ),
   },
   {
-    id: 'eventEnd',
-    accessorKey: 'event_end',
-    cell: ({ getValue }) => <span>{formatDate(getValue() as Date)}</span>,
-    sortingFn: 'datetime',
-    header: ({ column }) => <SortingButton column={column} label="End Date" />,
+    id: 'totalSpillDuration',
+    accessorFn: (row) => row.events.filter((event) => event.event_type === 'spill').reduce((acc, event) => acc + event.event_duration_mins, 0),
+    cell: ({ getValue }) => formatDuration(getValue() as number),
+    header: ({ column }) => <SortingButton column={column} label="Spill time past week" />,
   },
-  {
-    id: 'duration',
-    // accessorFn: (row) => row.event_end.getTime() - row.event_start.getTime(),
-    accessorKey: 'event_duration_mins',
-    cell: ({ getValue }) => <span>{formatDuration(getValue() as number)}</span>,
-    header: 'Duration',
-  },
+  // {
+  //   id: 'totalOfflineTime',
+  //   accessorFn: (row) => row.events.filter((event) => event.event_type === 'monitor offline').reduce((acc, event) => acc + event.event_duration_mins, 0),
+  //   cell: ({ getValue }) => <span>{formatDuration(getValue() as number)}</span>,
+  //   header: ({ column }) => <SortingButton column={column} label="Offline time past week" />,
+  // },
   {
     id: 'status',
     accessorFn: (row) => statusFn(row),
@@ -98,7 +115,7 @@ export const columns: ColumnDef<SpillEvent>[] = [
         explanation: string;
       };
       return (
-        <div className='flex items-center justify-center'>
+        <div className='text-center'>
           <TooltipProvider >
             <Tooltip>
               <TooltipTrigger>

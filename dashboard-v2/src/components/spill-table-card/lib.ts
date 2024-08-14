@@ -1,117 +1,96 @@
 import { Status } from '@/components/ui/status-color-dot';
-import type { SpillEvent } from '@/types';
+import type { SpillSite } from '@/types';
 
 export const statusFn = (
-	event: SpillEvent
+	site: SpillSite
 ): { status: Status; explanation: string } => {
-	const in_last_week =
-		new Date().getTime() - event.event_end.getTime() < 7 * 24 * 60 * 60 * 1000;
-	const in_last_day =
-		new Date().getTime() - event.event_end.getTime() < 24 * 60 * 60 * 1000;
+	const site_nearby = site.metadata.nearby;
+	const has_spilled_in_last_week = site.events.some(
+		(event) =>
+			event.event_type === 'spill' &&
+			new Date().getTime() - event.event_end.getTime() < 7 * 24 * 60 * 60 * 1000
+	);
+	const has_spilled_in_last_day = site.events.some(
+		(event) =>
+			event.event_type === 'spill' &&
+			new Date().getTime() - event.event_end.getTime() < 24 * 60 * 60 * 1000
+	);
+	const has_been_offline_in_last_day = site.events.some(
+		(event) =>
+			event.event_type === 'monitor offline' &&
+			new Date().getTime() - event.event_end.getTime() < 24 * 60 * 60 * 1000
+	);
 
-	if (event.metadata.nearby) {
-		if (event.event_type === 'spill') {
-			if (in_last_day) {
-				return {
-					status: Status.Bad,
-					explanation: 'Spill was nearby and in the last 24 hours.',
-				};
-			}
-			if (in_last_week) {
-				return {
-					status: Status.Warning,
-					explanation: 'Spill was nearby and in the last week.',
-				};
-			}
-			return {
-				status: Status.Good,
-				explanation: 'Spill was more than a week ago.',
-			};
-		}
-
-		if (event.event_type === 'monitor offline') {
-			if (in_last_day) {
-				return {
-					status: Status.Warning,
-					explanation:
-						'Monitor was offline within the last 24 hours. Spills may not have been reported.',
-				};
-			}
-			if (in_last_week) {
-				return {
-					status: Status.Warning,
-					explanation:
-						'Monitor was offline within the last week. Spills may not have been reported.',
-				};
-			}
-			return {
-				status: Status.Good,
-				explanation:
-					'Monitor was offline more than a week ago. Spills may not have been reported.',
-			};
-		}
-	}
-
-	if (event.event_type === 'spill') {
-		if (in_last_day) {
-			return {
-				status: Status.Warning,
-				explanation: 'Spill was not nearby and in the last 24 hours.',
-			};
-		}
-		if (in_last_week) {
-			return {
-				status: Status.Good,
-				explanation: 'Spill was not nearby and in the last week.',
-			};
-		}
+	if (site_nearby && has_spilled_in_last_day) {
 		return {
-			status: Status.Good,
-			explanation: 'Spill was not nearby and more than a week ago.',
+			status: Status.Bad,
+			explanation: 'This site is nearby and has spilled in the last 24 hours.',
 		};
 	}
 
-	if (event.event_type === 'monitor offline') {
-		if (in_last_day) {
-			return {
-				status: Status.Good,
-				explanation:
-					'Monitor was offline within the last 24 hours. Spills may not have been reported.',
-			};
-		}
-		if (in_last_week) {
-			return {
-				status: Status.Good,
-				explanation:
-					'Monitor was offline within the last week. Spills may not have been reported.',
-			};
-		}
+	if (has_spilled_in_last_day) {
 		return {
-			status: Status.Good,
+			status: Status.Warning,
 			explanation:
-				'Monitor was offline more than a week ago. Spills may not have been reported.',
+				'This site has spilled in the last 24 hours, however it is not close to the rowable section of river in Durham City.',
 		};
 	}
 
-	console.error('Unhandled event type', event);
-	return { status: Status.Good, explanation: 'Unknown event type' };
+	if (site_nearby && has_spilled_in_last_week) {
+		return {
+			status: Status.Warning,
+			explanation: 'This site is nearby and has spilled in the last week.',
+		};
+	}
+
+	if (has_spilled_in_last_week) {
+		return {
+			status: Status.Warning,
+			explanation:
+				'This site has spilled in the last week, however it is not close to the rowable section of river in Durham City.',
+		};
+	}
+
+	if (site_nearby && has_been_offline_in_last_day) {
+		return {
+			status: Status.Warning,
+			explanation:
+				'This site is nearby and has been offline within the last 24 hours. This means that spills may not have been reported.',
+		};
+	}
+
+	if (has_been_offline_in_last_day) {
+		return {
+			status: Status.Warning,
+			explanation:
+				'This site has been offline within the last 24 hours. This means that spills may not have been reported',
+		};
+	}
+
+	return {
+		status: Status.Good,
+		explanation:
+			'Site is online and has not recorded any spills in the last week.',
+	};
 };
 
-export const formatDate = (date: Date) => {
+export const formatDate = (date: Date | string) => {
+	if (typeof date === 'string') {
+		return date;
+	}
+
 	return date.toLocaleDateString('en-GB', {
+		weekday: 'short',
 		month: 'short',
-		day: 'numeric',
-		year: 'numeric',
-		hour: 'numeric',
-		minute: 'numeric',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
 	});
 };
 
 export const formatDuration = (duration: number) => {
 	const days = Math.floor(duration / (60 * 24));
-	const hours = Math.floor(
-		(duration % (60 * 24)) / (60)
-	);
+	const hours = Math.floor((duration % (60 * 24)) / 60);
 	const minutes = duration % 60;
 
 	if (days > 3) {
@@ -126,5 +105,9 @@ export const formatDuration = (duration: number) => {
 		return `1 day ${hours} hours`;
 	}
 
-	return `${hours} hours ${minutes} mins`;
+	if (hours > 0) {
+		return `${hours} hours ${minutes} mins`;
+	}
+
+	return `${minutes} mins`;
 };

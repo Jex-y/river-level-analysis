@@ -5,19 +5,19 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-import { useSpillEvents } from '@/hooks';
-import { DataTable } from './data-table';
+import { useSpillSites } from '@/hooks';
 import { columns } from './columns';
+import { DataTable } from './data-table';
 
 export function SpillTableCard() {
-  const { data } = useSpillEvents();
+  const { data } = useSpillSites();
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Storm Drain Outflows</CardTitle>
+        <CardTitle>Storm Drain Outflows Sites</CardTitle>
         <CardDescription>
-          These events can indicate the spillage of sewage into the river.
+          Storm drain outflow sites along the River Wear.
         </CardDescription>
       </CardHeader>
       <DataTable columns={columns} data={data || []} loading={!data} />

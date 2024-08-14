@@ -1,11 +1,11 @@
 
-import type { Table, PaginationState } from '@tanstack/react-table';
-import type { SpillEvent } from '@/types';
 import { Button } from '@/components/ui/button';
+import type { SpillSite } from '@/types';
+import type { PaginationState, Table } from '@tanstack/react-table';
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
 
 type PaginationControlsProps = {
-  table: Table<SpillEvent>;
+  table: Table<SpillSite>;
 }
 
 export function PaginationControls({ table }: PaginationControlsProps) {
@@ -48,14 +48,14 @@ export function PaginationControls({ table }: PaginationControlsProps) {
 }
 
 type PaginationInfoProps = {
-  table: Table<SpillEvent>;
+  table: Table<SpillSite>;
   pagination: PaginationState;
 }
 
 export function PaginationInfo({ table, pagination }: PaginationInfoProps) {
   return (
     <div className="text-sm text-muted-foreground">
-      Showing Events {(pagination.pageIndex * pagination.pageSize) + 1} -{' '} {(pagination.pageIndex + 1) * pagination.pageSize} of{' '} {table.getRowCount()}
+      Showing Sites {(pagination.pageIndex * pagination.pageSize) + 1} -{' '} {(pagination.pageIndex + 1) * pagination.pageSize} of{' '} {table.getRowCount()}
     </div>
   );
 }
