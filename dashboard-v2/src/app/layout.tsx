@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { cn } from '@/lib/utils';
-import { ThemeProvider } from "@/components/theme-provider";
 import { Footer } from "@/components/footer";
+import { ThemeProvider } from "@/components/theme-provider";
+import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     'Data',
   ],
   alternates: {
-    canonical: "https://river-level.edjex.dev/",
+    canonical: "https://river.edjex.dev/",
   },
   authors: [{
     name: "Edward Jex",
@@ -33,14 +33,6 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_GB",
     siteName: "Durham Rowing - River Dashboard",
-    images: [
-      {
-        url: "https://river-level.edjex.dev/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Durham Rowing - River Dashboard",
-      },
-    ],
   },
 
 };
