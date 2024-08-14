@@ -19,61 +19,77 @@ const getClient = () => {
 	return _client;
 };
 
-const fetch_data = async () => {
+const fetch_spill_sites = async () => {
 	const client = getClient();
 	const db = client.db(dbName);
 	const collection = db.collection(collectionName);
 
 	logger.info('Fetching sewage leaks');
 
-	const results = await collection.aggregate([
-		{
-			$match: {
-				event_end: {
-					$gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+	const results = await collection
+		.aggregate([
+			{
+				$match: {
+					event_end: {
+						$gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+					},
 				},
 			},
-		},
-		{
-			$addFields: {
-				event_duration_mins: {
-					$dateDiff: {
-						startDate: '$event_start',
-						endDate: '$event_end',
-						unit: 'minute',
+			{
+				$addFields: {
+					event_duration_mins: {
+						$dateDiff: {
+							startDate: '$event_start',
+							endDate: '$event_end',
+							unit: 'minute',
+						},
 					},
-				}
-			}
-		},
-		{
-			$unset: ['_id'],
-		},
-		{
-			$match: {
-				event_duration_mins: { $gte: 15 }
-			}
-		},
-		{
-			$sort: { event_end: -1 },
-		},
-	]).toArray();
+				},
+			},
+			{
+				$unset: ['_id'],
+			},
+			{
+				$match: {
+					event_duration_mins: { $gte: 15 },
+				},
+			},
+			{
+				$sort: { event_end: -1 },
+			},
+			{
+				$group: {
+					_id: '$metadata.site_id',
+					metadata: { $first: '$metadata' },
+					events: {
+						$push: {
+							$unsetField: {
+								field: 'metadata',
+								input: '$$ROOT',
+							},
+						},
+					},
+				},
+			},
+		])
+		.toArray();
 
-	logger.info(`Found ${results.length} sewage leaks`);
+	logger.info(`Found ${results.length} spill sites`);
 	return results;
 };
 
-export const getSewageLeaks = onRequest(
+export const getSpillSites = onRequest(
 	{
 		region: 'europe-west2',
 		cors: '*',
 	},
 	async (_req, res) => {
 		res.set('Cache-Control', 'public, max-age=300, s-maxage=900');
-		res.json(await fetch_data());
+		res.json(await fetch_spill_sites());
 	}
 );
 
-// const results = await fetch_data();
+// const results = await fetch_spill_sites();
 // // Write to results.json
 // import { writeFileSync } from 'fs';
 // writeFileSync('results.json', JSON.stringify(results, null, 2));

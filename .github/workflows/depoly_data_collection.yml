@@ -5,10 +5,8 @@ name: Deploy Firebase Functions
 on:
   push:
     paths:
-      - ".github/workflows/firebase-functions.yml"
+      - ".github/workflows/deploy_data_collection.yml"
       - "data_collection/**"
-      - "level_prediction_inference/**"
-      - "sewage_leak/**"
     branches:
       - main
 jobs:
@@ -24,12 +22,11 @@ jobs:
       - name: Install python
         uses: actions/setup-python@v5
         with:
-          python-version: |
-            3.11
-            3.12
+          python-version: 3.12
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
+
       - name: Install dependencies for data_collection
         working-directory: ./data_collection
         run: python312 -m venv ./venv && source ./venv/bin/activate && pip install -r requirements.txt
@@ -37,16 +34,6 @@ jobs:
       - name: create .env file for data_collection
         working-directory: ./data_collection
         run: echo "${{ secrets.DATA_COLLECTION_ENV }}" > .env
-      - name: Install dependencies for level_prediction_inference
-        working-directory: ./level_prediction_inference
-        run: python311 -m venv ./venv && source ./venv/bin/activate && pip install -r requirements.txt
-      - name: Install dependencies for sewage_leak and build
-
-        working-directory: ./sewage_leak
-        run: npm install && npm run build
-      - name: create .env file for sewage_leak
-        working-directory: ./sewage_leak
-        run: echo "${{ secrets.SEWAGE_LEAK_ENV }}" > .env
 
       - name: Deploy to Firebase Functions
         run: firebase deploy --only functions --token ${{ secrets.FIREBASE_CI_TOKEN }} --non-interactive -m "${{ github.event.head_commit.message }}"
