@@ -6,6 +6,12 @@ import polars as pl
 import torch
 from hydrology import HydrologyApi
 from torch.utils.data import Dataset
+import logging
+from sklearn.compose import make_column_selector, make_column_transformer
+from sklearn.preprocessing import QuantileTransformer
+from torch.utils.data import DataLoader
+from pytorch_lightning import LightningDataModule
+import wandb
 
 
 def calculate_time_features(
@@ -32,6 +38,21 @@ def calculate_time_features(
     )
 
 
+def calculate_rolling_features(
+    df,
+    selector,
+    windows=[7 * 24 * 4, 30 * 24 * 4],
+):
+    # Doesn't matter whether mean or sum is used as data is normalized later.
+    return pl.concat(
+        [
+            df.select(selector.rolling_mean(window).name.suffix(f"_mean_{window}"))
+            for window in windows
+        ],
+        how="horizontal",
+    )
+
+
 def load_training_data(
     stations: pl.DataFrame,
     train_split: float = 0.8,
@@ -41,13 +62,104 @@ def load_training_data(
 
         df = api.get_measures(stations, start_date=datetime(2007, 1, 1))
 
-    df = pl.concat(
-        [df, calculate_time_features(df["dateTime"])], how="horizontal"
-    ).drop("dateTime")
+    df = (
+        pl.concat(
+            [
+                df,
+                calculate_time_features(df["dateTime"]),
+                calculate_rolling_features(
+                    df,
+                    (
+                        pl.selectors.contains("rainfall (mm)")
+                        | pl.selectors.contains("level (m)")
+                    ),
+                ),
+            ],
+            how="horizontal",
+        )
+        .drop("dateTime")
+        .drop_nulls()
+    )
 
     train_records = int(len(df) * train_split)
 
     return df.slice(0, train_records), df.slice(train_records)
+
+
+class DataModule(LightningDataModule):
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+
+        log = logging.getLogger("training")
+
+        stations = pl.read_json(config.stations_filepath)
+
+        log.info(f"Loaded {len(stations)} stations")
+        wandb.log({"stations": stations["label"].to_list()})
+
+        log.info("Loading training data")
+
+        train_df, test_df = load_training_data(stations, train_split=config.train_split)
+
+        log.info(
+            f"Loaded {len(train_df)} training samples and {len(test_df)} test samples"
+        )
+
+        log.info("Preprocessing data")
+
+        X_preprocessing = make_column_transformer(
+            (
+                QuantileTransformer(output_distribution="normal"),
+                make_column_selector(pattern=r"- level \(m\)"),
+            ),
+            (
+                QuantileTransformer(output_distribution="normal"),
+                make_column_selector(pattern=r"- rainfall \(mm\)"),
+            ),
+            remainder="passthrough",
+        )
+
+        y_preprocessing = QuantileTransformer(output_distribution="normal")
+
+        X_train = train_df.to_pandas().astype("float32")
+        y_train = train_df.select(config.target_col).to_numpy().astype("float32")
+
+        X_test = test_df.to_pandas().astype("float32")
+        y_test = test_df.select(config.target_col).to_numpy().astype("float32")
+
+        X_train = torch.tensor(X_preprocessing.fit_transform(X_train))
+        y_train = torch.tensor(y_preprocessing.fit_transform(y_train))
+
+        X_test = torch.tensor(X_preprocessing.transform(X_test))
+        y_test = torch.tensor(y_preprocessing.transform(y_test))
+
+        self.train_dataset = TimeSeriesDataset(
+            X_train, y_train, config.sequence_length, config.prediction_length
+        )
+        self.test_dataset = TimeSeriesDataset(
+            X_test, y_test, config.sequence_length, config.prediction_length
+        )
+
+    @property
+    def num_features(self):
+        return self.train_dataset.X.shape[1]
+
+    def train_dataloader(self):
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.config.batch_size,
+            shuffle=True,
+            pin_memory=True,
+        )
+
+    def val_dataloader(self):
+        return DataLoader(
+            self.test_dataset,
+            batch_size=self.config.batch_size,
+            shuffle=False,
+            pin_memory=True,
+        )
 
 
 class TimeSeriesDataset(Dataset):

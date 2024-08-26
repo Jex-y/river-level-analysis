@@ -2,13 +2,19 @@ import argparse
 from pathlib import Path
 
 from rich.console import Console
-from src.firebase import bucket
+
+from firebase_admin import initialize_app, storage
+
+app = initialize_app(options={"storageBucket": "durham-river-level.appspot.com"})
+
+bucket = storage.bucket()
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    'model_dir',
+    "model_dir",
     type=Path,
-    help='Path to the model files',
+    help="Path to the model files",
 )
 
 
@@ -17,21 +23,21 @@ def main():
     model_dir = Path(args.model_dir)
 
     files = {
-        'model': model_dir / 'model_torchscript.pt',
-        'preprocessing pipeline': model_dir / 'preprocessing.pickle',
-        'inference config': model_dir / 'inference_config.json',
+        "model": model_dir / "model_torchscript.pt",
+        "preprocessing pipeline": model_dir / "preprocessing.pickle",
+        "inference config": model_dir / "inference_config.json",
     }
 
-    assert model_dir.exists(), f'{model_dir} does not exist'
+    assert model_dir.exists(), f"{model_dir} does not exist"
 
     for name, file in files.items():
-        assert file.exists(), f'{name} does not exist in {model_dir}'
+        assert file.exists(), f"{name} does not exist in {model_dir}"
 
     for name, file in files.items():
-        with Console().status(f'Uploading {name}'):
-            blob = bucket.blob(f'model/{file.name}')
+        with Console().status(f"Uploading {name}"):
+            blob = bucket.blob(f"model/{file.name}")
             blob.upload_from_filename(file)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

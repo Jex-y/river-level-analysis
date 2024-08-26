@@ -1,0 +1,8 @@
+name: ts-mixer
+activation_function: relu
+num_blocks: 3
+dropout: 0.2
+ff_dim: 12
+normalize_before: true
+norm_type: batch
+output_channels: 2
