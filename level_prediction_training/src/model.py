@@ -3,7 +3,7 @@ import re
 from typing import Iterable, Literal
 
 import torch
-from einops import rearrange
+from einops import rearrange, reduce
 from pytorch_lightning import LightningModule
 from torch import nn
 from torch.nn.functional import binary_cross_entropy_with_logits
@@ -313,26 +313,41 @@ class BaseTimeSeriesModel(LightningModule):
         quantiles = torch.tensor(self.config.quantiles, device=y_true.device)
         thresholds = torch.tensor(self.config.thresholds, device=y_true.device)
 
+        # Mean Absolute Error loss
+
         mae_loss = (y_true - pred_median).abs().mean()
 
-        quantile_loss = 2 * (
-            (y_true - pred_quantiles) * ((y_true <= pred_quantiles).float() - quantiles)
-        ).abs().mean(dim=(0, 1))
+        # Quantile loss
+
+        quantile_error = y_true - pred_quantiles
+
+        quantile_loss = reduce(
+            torch.max((quantiles - 1) * quantile_error, quantiles * quantile_error),
+            "bs np nq -> nq",
+            "mean",
+        )
+
+        # Threshold loss
 
         y_true_over_threshold = (y_true > thresholds).float()
-        y_pred_over_threhsold = torch.sigmoid(pred_thresholds) > 0.5
 
-        threshold_loss = binary_cross_entropy_with_logits(
-            pred_thresholds,
-            y_true_over_threshold,
-            reduction="none",
-        ).mean(dim=(0, 1))
+        threshold_loss = reduce(
+            binary_cross_entropy_with_logits(
+                pred_thresholds,
+                y_true_over_threshold,
+                reduction="none",
+            ),
+            "bs np nt -> nt",
+            "mean",
+        )
 
         total_loss = (
             (quantile_loss.mean() * self.config.quantile_loss_coefficient)
             + (threshold_loss.mean() * self.config.threshold_loss_coefficient)
             + (mae_loss * self.config.mae_loss_coefficient)
         )
+
+        y_pred_over_threhsold = torch.sigmoid(pred_thresholds) > 0.5
 
         return total_loss, {
             "total_loss": total_loss,

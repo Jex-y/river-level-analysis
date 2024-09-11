@@ -38,8 +38,8 @@ sweep_config = {
             "max": 256,
             "q": 8,
         },
-        "num_mlp_blocks": {"distribution": "q_uniform", "min": 1, "max": 4, "q": 1},
-        "num_conv_blocks": {"distribution": "q_uniform", "min": 1, "max": 4, "q": 1},
+        "num_mlp_blocks": {"values": [1, 2, 3, 4]},
+        "num_conv_blocks": {"values": [0, 1, 2, 3]},
         "conv_kernel_size": {"values": [3, 5, 7]},
         "conv_hidden_size": {
             "distribution": "q_log_uniform_values",
@@ -87,11 +87,4 @@ sweep_id = (
 quiet_output()
 
 
-if args.n_agents == 1:
-    wandb.agent(sweep_id, function=train, project="river-level-forecasting")
-else:
-    import multiprocessing as mp
-
-    mp.set_start_method("spawn")
-    for _ in range(args.n_agents):
-        mp.Process(target=wandb.agent, args=(sweep_id, train)).start()
+wandb.agent(sweep_id, function=train, project="river-level-forecasting")
