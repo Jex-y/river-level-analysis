@@ -129,9 +129,11 @@ class QuantilePreprocessing(PreprocessingTransform):
 
         last_x_value_lt_idx = (
             (x_values[None, :, :] < x[:, None, :])
-            .count_nonzero(dim=1)
+            .sum(dim=1)
             .clamp(1, self.n_quantiles - 1)
         ) - 1
+
+        # Count_nonzero sometimes causes OOM
 
         last_x_value_lt = x_values.gather(0, last_x_value_lt_idx)
         next_x_value = x_values.gather(0, last_x_value_lt_idx + 1)
@@ -172,7 +174,7 @@ class QuantilePreprocessing(PreprocessingTransform):
 
         last_x_value_lt_idx = (
             (x_buckets[None, :, :] < x[:, None, :])
-            .count_nonzero(dim=1)
+            .sum(dim=1)
             .clamp(1, self.n_quantiles - 1)
         ) - 1
 
