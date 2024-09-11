@@ -108,12 +108,13 @@ def train(config: Optional[Config] = None):
             else tuple(wandb_config["rolling_windows"])
         )
 
-        config = Config(wandb_config)
+        config = Config(**wandb_config)
     else:
         wandb.init(project="river-level-forecasting", config=asdict(config))
         seed = config.seed if config.seed is not None else random.randint(0, 2**16 - 1)
 
-    log.info(f"Using seed: {seed}")
+    log.info(f"Using config: {config}")
+
     seed_everything(seed)
 
     log.info(f"wandb run: {wandb.run.get_url()}")

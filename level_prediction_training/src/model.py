@@ -497,11 +497,13 @@ class TimeSeriesModel(BaseTimeSeriesModel):
             )
         )
 
-        sizes = (
+        mlp_sizes = (
             [mlp_input_size]
             + [config.mlp_hidden_size] * config.num_mlp_blocks
             + [self.num_output_features]
         )
+
+        print(f"conv_sizes: {conv_sizes}, mlp_sizes: {mlp_sizes}")
 
         is_last = [False] * config.num_mlp_blocks + [True]
 
@@ -514,7 +516,7 @@ class TimeSeriesModel(BaseTimeSeriesModel):
                     config=config,
                 )
                 for input_size, output_size, is_last in zip(
-                    sizes[:-1], sizes[1:], is_last
+                    mlp_sizes[:-1], mlp_sizes[1:], is_last
                 )
             ],
         )
