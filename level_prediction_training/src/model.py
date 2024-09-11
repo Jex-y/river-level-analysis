@@ -273,7 +273,7 @@ class BaseTimeSeriesModel(LightningModule):
 
         # rolling features should be of shape (n_samples - longest_window + 1, n_features * n_windows)
 
-        n_output_samples = x.shape[0] - max(*self.config.rolling_windows) + 1
+        n_output_samples = x.shape[0] - max(self.config.rolling_windows) + 1
         # Get only last n_output_samples for each window size to make sure they are all the same length
 
         # x.unfold(0, window, 1) creates a tensor of shape (n_samples - window + 1, n_features, window)
@@ -502,8 +502,6 @@ class TimeSeriesModel(BaseTimeSeriesModel):
             + [config.mlp_hidden_size] * config.num_mlp_blocks
             + [self.num_output_features]
         )
-
-        print(f"conv_sizes: {conv_sizes}, mlp_sizes: {mlp_sizes}")
 
         is_last = [False] * config.num_mlp_blocks + [True]
 

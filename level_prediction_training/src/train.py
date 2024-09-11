@@ -99,19 +99,20 @@ def train(config: Optional[Config] = None):
     if config is None:
         seed = random.randint(0, 2**16 - 1)
         wandb.init(project="river-level-forecasting", config={"seed": seed})
-
-        wandb_config = wandb.config
-        # Sometimes rolling windows are not passed as an iterable
-        wandb_config["rolling_windows"] = (
-            (wandb_config["rolling_windows"],)
-            if isinstance(wandb_config["rolling_windows"], int)
-            else tuple(wandb_config["rolling_windows"])
-        )
-
-        config = Config(**wandb_config)
+        config = Config(**wandb.config)
     else:
         wandb.init(project="river-level-forecasting", config=asdict(config))
         seed = config.seed if config.seed is not None else random.randint(0, 2**16 - 1)
+
+    # make sure that config.rolling_windows is a tuple
+    if not isinstance(config.rolling_windows, tuple):
+        config.rolling_windows = (
+            tuple(config.rolling_windows)
+            if isinstance(config.rolling_windows, (list, set))
+            else tuple(
+                config.rolling_windows,
+            )
+        )
 
     log.info(f"Using config: {config}")
 
