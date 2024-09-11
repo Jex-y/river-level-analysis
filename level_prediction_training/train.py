@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser()
 
 for field in dataclasses.fields(Config):
     parser.add_argument(
-        f"--{field.name}",
+        f"--{field.name.replace('_', '-')}",
         type=field.type,
         default=field.default,
         help=f"Default: {field.default}",

@@ -1,7 +1,0 @@
-name: mlp
-activation_function: relu
-batch_norm: true
-num_layers: 3
-hidden_size: 1024
-output_channels: 2
-dropout: 0.2

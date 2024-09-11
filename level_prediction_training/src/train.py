@@ -19,7 +19,7 @@ import wandb
 
 from .config import Config
 from .dataset import DataModule
-from .model import TimeSeriesMLP
+from .model import TimeSeriesModel
 from polars import DataFrame
 from pathlib import Path
 from torch.nn import Module as TorchModule
@@ -99,7 +99,16 @@ def train(config: Optional[Config] = None):
     if config is None:
         seed = random.randint(0, 2**16 - 1)
         wandb.init(project="river-level-forecasting", config={"seed": seed})
-        config = Config(**wandb.config)
+
+        wandb_config = wandb.config
+        # Sometimes rolling windows are not passed as an iterable
+        wandb_config["rolling_windows"] = (
+            (wandb_config["rolling_windows"],)
+            if isinstance(wandb_config["rolling_windows"], int)
+            else tuple(wandb_config["rolling_windows"])
+        )
+
+        config = Config(wandb_config)
     else:
         wandb.init(project="river-level-forecasting", config=asdict(config))
         seed = config.seed if config.seed is not None else random.randint(0, 2**16 - 1)
@@ -111,7 +120,7 @@ def train(config: Optional[Config] = None):
 
     data_module = DataModule(config)
 
-    model = TimeSeriesMLP(
+    model = TimeSeriesModel(
         input_column_names=data_module.x_column_names, config=config
     ).fit_preprocessing(data_module.train_dataset.x, data_module.train_dataset.y)
 

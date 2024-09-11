@@ -65,18 +65,20 @@ class DataModule(LightningDataModule):
         x_test = test_df.drop("datetime").to_torch().type(torch.float32)
         y_test = test_df.select(config.target_col).to_torch().type(torch.float32)
 
+        x_len = max(*config.rolling_windows, config.context_length)
+
         self.train_dataset = TimeSeriesDataset(
             x_train_datetime,
             x_train,
             y_train,
-            config.context_length,
+            x_len,
             config.prediction_length,
         )
         self.test_dataset = TimeSeriesDataset(
             x_test_datetime,
             x_test,
             y_test,
-            config.context_length,
+            x_len,
             config.prediction_length,
         )
 

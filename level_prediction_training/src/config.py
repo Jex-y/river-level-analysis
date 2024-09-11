@@ -62,13 +62,20 @@ class Config:
     prediction_length: int = 4 * 12
 
     activation_function: ActivationFunction = ActivationFunction.SWISH
-    norm: Norm = "batch"
     norm_before_activation: bool = False
 
-    num_blocks: int = 3
+    mlp_norm: Norm = "batch"
+    num_mlp_blocks: int = 3
+    mlp_hidden_size: int = 128
+
+    num_conv_blocks: int = 1
+    conv_kernel_size: int = 3
+    conv_hidden_size: int = 128
+    conv_norm: Norm = "batch"
+    skip_connection: bool = True
+
     dropout: float = 0.2
     weight_decay: float = 0.0085
-    hidden_size: int = 136
 
     model_save_dir: Path = Path("./models")
     stations_filepath: Path = Path("./stations.json")

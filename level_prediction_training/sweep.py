@@ -32,19 +32,49 @@ sweep_config = {
             "max": 2048,
             "q": 64,
         },
-        "hidden_size": {
+        "mlp_hidden_size": {
             "distribution": "q_log_uniform_values",
-            "min": 4,
+            "min": 8,
             "max": 256,
-            "q": 4,
+            "q": 8,
         },
-        "num_blocks": {"distribution": "q_uniform", "min": 1, "max": 4, "q": 1},
+        "num_mlp_blocks": {"distribution": "q_uniform", "min": 1, "max": 4, "q": 1},
+        "num_conv_blocks": {"distribution": "q_uniform", "min": 1, "max": 4, "q": 1},
+        "conv_kernel_size": {"values": [3, 5, 7]},
+        "conv_hidden_size": {
+            "distribution": "q_log_uniform_values",
+            "min": 8,
+            "max": 256,
+            "q": 8,
+        },
+        "skip_connection": {"values": [True, False]},
         "dropout": {"distribution": "uniform", "min": 0.01, "max": 0.5},
         "activation_function": {
             "values": ["relu", "gelu", "tanh", "elu", "swish"],
         },
-        "norm": {"values": ["batch", "layer", "none"]},
+        "mlp_norm": {"values": ["batch", "layer", "none"]},
+        "conv_norm": {"values": ["batch", "layer", "none"]},
         "norm_before_activation": {"values": [True, False]},
+        "quantile_preprocessing_n_quantiles": {
+            "distribution": "q_uniform",
+            "min": 4,
+            "max": 512,
+            "q": 4,
+        },
+        "rolling_windows": {
+            "values": [
+                [
+                    7 * 4 * 24,
+                ],
+                [
+                    30 * 4 * 24,
+                ],
+                [
+                    7 * 4 * 24,
+                    30 * 4 * 24,
+                ],
+            ]
+        },
     },
 }
 

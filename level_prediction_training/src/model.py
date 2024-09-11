@@ -15,8 +15,6 @@ from .preprocessing import (
     StandardPreprocessing,
 )
 
-# TODO, investigate conv on context?
-
 
 def add_prefix(prefix, dictionary):
     return {f"{prefix}_{k}": v for k, v in dictionary.items()}
@@ -40,12 +38,24 @@ def get_activation_function(config: Config):
             )
 
 
-def get_norm_layer(config: Config, size: int):
-    match config.norm:
+def get_mlp_norm_layer(config: Config, size: int):
+    match config.mlp_norm:
         case Norm.BATCH:
             return nn.BatchNorm1d(size)
         case Norm.LAYER:
             return nn.LayerNorm(size)
+        case Norm.NONE:
+            return nn.Identity()
+        case _:
+            raise ValueError(f"Invalid norm layer: {config.norm}.")
+
+
+def get_conv_norm_layer(config: Config, features: int):
+    match config.conv_norm:
+        case Norm.BATCH:
+            return nn.BatchNorm1d(features)
+        case Norm.LAYER:
+            return nn.LayerNorm((features, config.context_length))
         case Norm.NONE:
             return nn.Identity()
         case _:
@@ -94,6 +104,8 @@ class BaseTimeSeriesModel(LightningModule):
         self.n_context_features = len(input_column_names)
         self.x_column_names = input_column_names
 
+        self.target_feature_index = list(input_column_names).index(config.target_col)
+
         self.level_preprocessing = get_preprocessing_layer("level", self.config)
         self.rainfall_preprocessing = get_preprocessing_layer("rainfall", self.config)
         self.level_rolling_preprocessing = get_preprocessing_layer("level", self.config)
@@ -102,22 +114,26 @@ class BaseTimeSeriesModel(LightningModule):
         )
         self.y_preprocessing = get_preprocessing_layer("y", self.config)
 
-    def forward(self, X: torch.FloatTensor) -> torch.FloatTensor:
-        """Forward pass of the model
+    def forward(
+        self,
+        features_with_time_dim: torch.FloatTensor,
+        features_without_time_dim: torch.FloatTensor,
+    ):
+        """Forward pass of the model.
 
         Args:
-            time (torch.FloatTensor): Expected to be of size (batch_size, 2) where the first column is the day of the year and the second column is the year of the last sample in the context window.
-            features (torch.FloatTensor): Features of shape (batch_size, num_features)
+            features_with_time (torch.FloatTensor): Shape (batch_size, context_length, -1)
+            features_without_time (torch.FloatTensor): Shape (batch_size, -1)
         """
-        raise NotImplementedError
+        pass
 
     @property
-    def num_input_features(self):
-        return (
-            (self.n_context_features * self.config.context_length)
-            + (len(self.config.rolling_windows) * self.n_context_features)
-            + 3
-        )
+    def num_time_features(self):
+        return self.n_context_features
+
+    @property
+    def num_non_time_features(self):
+        return (len(self.config.rolling_windows) * self.n_context_features) + 3
 
     @property
     def num_output_features(self):
@@ -128,18 +144,18 @@ class BaseTimeSeriesModel(LightningModule):
     def forecast(
         self,
         time: torch.LongTensor,
-        features: torch.FloatTensor,
+        context: torch.FloatTensor,
         return_logits: bool = False,
     ):
-        batch_size = features.shape[0]
+        batch_size = context.shape[0]
 
-        time_features = self.calculate_timestamp_features(time)
+        datetime_features = self.calculate_timestamp_features(time)
         # Shape should be (batch_size, 3)
 
-        rolling_features = self.calculate_rolling_features(features)
+        rolling_features = self.calculate_rolling_features(context)
         # Shape should be (batch_size, len(rolling_windows) * num_features)
 
-        context = features[:, -self.config.context_length :]
+        context = context[:, -self.config.context_length :]
         # Shape should be (batch_size, context_length, num_features)
 
         # Apply preprocessing
@@ -171,8 +187,12 @@ class BaseTimeSeriesModel(LightningModule):
         # mean, quantiles, thresholds_logits
         last_dim_splits = [1, len(self.config.quantiles), len(self.config.thresholds)]
 
+        # output = self.forward(
+        #     torch.cat([context.flatten(1), time_features, rolling_features], dim=-1)
+        # ).view(batch_size, self.config.prediction_length, sum(last_dim_splits))
         output = self.forward(
-            torch.cat([context.flatten(1), time_features, rolling_features], dim=-1)
+            context,
+            torch.cat([datetime_features, rolling_features], dim=-1),
         ).view(batch_size, self.config.prediction_length, sum(last_dim_splits))
 
         pred_mean_transformed, pred_quantiles_transformed, pred_thresholds_logits = (
@@ -300,7 +320,7 @@ class BaseTimeSeriesModel(LightningModule):
         ).abs().mean(dim=(0, 1))
 
         y_true_over_threshold = (y_true > thresholds).float()
-        # pred_thresholds_probabilities = torch.sigmoid(pred_thresholds)
+        y_pred_over_threhsold = torch.sigmoid(pred_thresholds) > 0.5
 
         threshold_loss = binary_cross_entropy_with_logits(
             pred_thresholds,
@@ -327,18 +347,20 @@ class BaseTimeSeriesModel(LightningModule):
                 f"threshold_loss_{t}": threshold_loss[i]
                 for i, t in enumerate(self.config.thresholds)
             },
-            # **{
-            #     f"threshold_accuracy_{t}": (
-            #         y_true_over_threshold[i] == (pred_thresholds_probabilities[i] > 0.5)
-            #     )
-            #     for i, t in enumerate(self.config.thresholds)
-            # },
-            # **{
-            #     f"quantile_{q}_coverage": (y_true <= pred_quantiles[:, i])
-            #     .float()
-            #     .mean()
-            #     for i, q in enumerate(self.config.quantiles)
-            # },
+            **{
+                f"threshold_accuracy_{t}": (
+                    y_true_over_threshold[i] == y_pred_over_threhsold[i]
+                )
+                .float()
+                .mean()
+                for i, t in enumerate(self.config.thresholds)
+            },
+            **{
+                f"quantile_{q}_coverage": (y_true <= pred_quantiles[:, i : i + 1])
+                .float()
+                .mean()
+                for i, q in enumerate(self.config.quantiles)
+            },
         }
 
     def training_step(self, batch, _batch_idx):
@@ -380,21 +402,49 @@ class MLPBlock(nn.Sequential):
         is_last: bool = False,
     ):
         super().__init__(
-            nn.Linear(input_size, output_size, bias=not config.norm_before_activation),
+            nn.Linear(
+                input_size,
+                output_size,
+                bias=not config.norm_before_activation and config.mlp_norm != Norm.NONE,
+            ),
             conditional_layer(
-                get_norm_layer(config, output_size),
+                get_mlp_norm_layer(config, output_size),
                 config.norm_before_activation,
             ),
             get_activation_function(config),
             conditional_layer(
-                get_norm_layer(config, output_size),
+                get_mlp_norm_layer(config, output_size),
                 not config.norm_before_activation,
             ),
             get_dropout_layer(config) if not is_last else nn.Identity(),
         )
 
 
-class TimeSeriesMLP(BaseTimeSeriesModel):
+class ConvBlock(nn.Sequential):
+    def __init__(self, input_features, output_features, config: Config):
+        super().__init__(
+            nn.Conv1d(
+                input_features,
+                output_features,
+                config.conv_kernel_size,
+                padding=config.conv_kernel_size // 2,
+                bias=not config.norm_before_activation
+                and config.conv_norm != Norm.NONE,
+            ),
+            conditional_layer(
+                get_conv_norm_layer(config, output_features),
+                config.norm_before_activation,
+            ),
+            get_activation_function(config),
+            conditional_layer(
+                get_conv_norm_layer(config, output_features),
+                not config.norm_before_activation,
+            ),
+            get_dropout_layer(config),
+        )
+
+
+class TimeSeriesModel(BaseTimeSeriesModel):
     def __init__(
         self,
         input_column_names: Iterable[str],
@@ -402,15 +452,45 @@ class TimeSeriesMLP(BaseTimeSeriesModel):
     ):
         super().__init__(input_column_names, config)
 
+        # Conv layers are applied to features with a time dimension
+        # These features are then flattened and passed through the MLP layers
+
+        conv_sizes = [self.num_time_features] + [
+            config.conv_hidden_size
+        ] * config.num_conv_blocks
+
+        self.conv_layers = nn.Sequential(
+            *[
+                ConvBlock(
+                    input_features=input_features,
+                    output_features=output_features,
+                    config=config,
+                )
+                for input_features, output_features in zip(
+                    conv_sizes[:-1], conv_sizes[1:]
+                )
+            ]
+        )
+
+        mlp_input_size = (
+            self.num_non_time_features
+            + conv_sizes[-1] * self.config.context_length
+            + (
+                self.num_time_features * self.config.context_length
+                if config.skip_connection
+                else 0
+            )
+        )
+
         sizes = (
-            [self.num_input_features]
-            + [config.hidden_size] * config.num_blocks
+            [mlp_input_size]
+            + [config.mlp_hidden_size] * config.num_mlp_blocks
             + [self.num_output_features]
         )
 
-        is_last = [False] * config.num_blocks + [True]
+        is_last = [False] * config.num_mlp_blocks + [True]
 
-        self.layers = nn.Sequential(
+        self.mlp_layers = nn.Sequential(
             *[
                 MLPBlock(
                     input_size=input_size,
@@ -424,5 +504,21 @@ class TimeSeriesMLP(BaseTimeSeriesModel):
             ],
         )
 
-    def forward(self, x: torch.Tensor):
-        return self.layers(x)
+    def forward(
+        self, features_with_time: torch.Tensor, features_without_time: torch.Tensor
+    ):
+        features_with_time_after_conv = self.conv_layers(
+            features_with_time.permute(0, 2, 1)
+        ).permute(0, 2, 1)
+
+        if self.config.skip_connection:
+            features_with_time_after_conv = torch.cat(
+                [features_with_time, features_with_time_after_conv], dim=-1
+            )
+
+        return self.mlp_layers(
+            torch.cat(
+                [features_with_time_after_conv.flatten(1), features_without_time],
+                dim=-1,
+            )
+        )
