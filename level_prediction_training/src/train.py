@@ -96,11 +96,22 @@ def train(config: Optional[Config] = None):
     setup_logging()
     log = logging.getLogger("training")
 
+
+
     if config is None:
         seed = random.randint(0, 2**16 - 1)
         wandb.init(project="river-level-forecasting", config={"seed": seed})
         config = Config(**wandb.config)
     else:
+        # config.num_mlp_blocks = 5
+        # config.mlp_hidden_size = 8
+        # config.conv_kernel_size = 5
+        # config.conv_hidden_size = 48
+        # config.num_conv_blocks = 3
+        # config.conv_norm = "layer"
+        # config.activation_function = "swish"
+        # config.norm_before_activation = False
+
         wandb.init(project="river-level-forecasting", config=asdict(config))
         seed = config.seed if config.seed is not None else random.randint(0, 2**16 - 1)
 
@@ -116,7 +127,7 @@ def train(config: Optional[Config] = None):
 
     log.info(f"Using config: {config}")
 
-    seed_everything(seed)
+    # seed_everything(seed)
 
     log.info(f"wandb run: {wandb.run.get_url()}")
 
@@ -129,7 +140,6 @@ def train(config: Optional[Config] = None):
     trainer = Trainer(
         max_epochs=config.train_epochs,
         logger=loggers.WandbLogger(),
-        benchmark=True,
         fast_dev_run=config.dev_run,
     )
 

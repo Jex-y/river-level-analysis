@@ -34,7 +34,7 @@ class PreprocessingTransform(nn.Module):
 
 class IdentityPreprocessing(PreprocessingTransform):
     def __init__(self):
-        super().__init()
+        super().__init__()
 
     def fit(self, x: torch.Tensor):
         return self

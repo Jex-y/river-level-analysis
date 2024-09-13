@@ -12,7 +12,7 @@ bucket = storage.bucket()
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "model_dir",
+    "model-dir",
     type=Path,
     help="Path to the model files",
 )
