@@ -92,8 +92,6 @@ class DataModule(LightningDataModule):
             batch_size=self.config.batch_size,
             shuffle=True,
             pin_memory=True,
-            num_workers=8,
-            persistent_workers=True,
         )
 
     def val_dataloader(self):

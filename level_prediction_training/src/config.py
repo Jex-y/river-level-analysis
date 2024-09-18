@@ -21,7 +21,6 @@ class Norm(StrEnum):
 class PreprocessingType(StrEnum):
     STANDARD = "standard"
     QUANTILE = "quantile"
-    MINMAX = "minmax"
     NONE = "none"
 
 
@@ -65,16 +64,15 @@ class Config:
     prediction_length: int = 4 * 12
 
     activation_function: ActivationFunction = ActivationFunction.SWISH
-    norm_before_activation: bool = False
 
-    mlp_norm: Norm = "batch"
+    mlp_norm: Norm = Norm.BATCH
     num_mlp_blocks: int = 2
     mlp_hidden_size: int = 64
 
     num_conv_blocks: int = 1
-    conv_kernel_size: int = 4
+    conv_kernel_size: int = 3
     conv_hidden_size: int = 32
-    conv_norm: Norm = "batch"
+    conv_norm: Norm = Norm.BATCH
     skip_connection: bool = True
 
     dropout: float = 0.2

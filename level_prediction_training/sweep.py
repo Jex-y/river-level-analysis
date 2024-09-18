@@ -4,7 +4,6 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--sweep-id", type=str)
-parser.add_argument("--n-agents", type=int, default=1)
 args = parser.parse_args()
 
 
@@ -13,35 +12,22 @@ sweep_config = {
     "metric": {"name": "val_total_loss", "goal": "minimize"},
     "early_terminate": {"type": "hyperband", "eta": 2, "min_iter": 8},
     "parameters": {
-        "train_epochs": {"value": 150},
-        "lr": {"distribution": "log_uniform_values", "min": 1e-3, "max": 5e-2},
-        "weight_decay": {
-            "distribution": "log_uniform_values",
-            "min": 1e-3,
-            "max": 5e-2,
-        },
+        "train_epochs": {"value": 25},
+        "lr": {"values": [1e-3, 2e-3, 5e-3, 1e-2, 2e-2]},
         "mlp_hidden_size": {
-            "distribution": "q_log_uniform_values",
-            "min": 8,
-            "max": 64,
-            "q": 8,
+            "values": [8, 12, 16, 20, 24, 32],
         },
-        "num_mlp_blocks": {"values": [3, 4, 5]},
-        "num_conv_blocks": {"values": [0, 1, 2, 3, 4]},
+        "num_mlp_blocks": {"values": [2, 3, 4, 5]},
+        "num_conv_blocks": {"values": [2, 3, 4, 5]},
         "conv_kernel_size": {"values": [3, 5]},
         "conv_hidden_size": {
-            "distribution": "q_log_uniform_values",
-            "min": 8,
-            "max": 256,
-            "q": 8,
+            "values": [8, 16, 24, 32, 48, 64, 80, 96, 112, 128],
         },
-        "skip_connection": {"values": [True, False]},
         "activation_function": {
             "values": ["relu", "gelu", "tanh", "elu", "swish"],
         },
-        "mlp_norm": {"values": ["batch", "layer"]},
         "conv_norm": {"values": ["batch", "layer"]},
-        "norm_before_activation": {"values": [True, False]},
+        "x_preprocessing": {"values": ["quantile", "none"]}
     },
 }
 
@@ -52,6 +38,5 @@ sweep_id = (
 )
 
 quiet_output()
-
 
 wandb.agent(sweep_id, function=train, project="river-level-forecasting")

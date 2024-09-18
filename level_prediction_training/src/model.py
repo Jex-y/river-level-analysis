@@ -66,10 +66,6 @@ def get_dropout_layer(config: Config):
     return nn.Dropout(config.dropout) if config.dropout > 0 else nn.Identity()
 
 
-def conditional_layer(layer, condition):
-    return layer if condition else nn.Identity()
-
-
 def get_preprocessing_layer(
     feature_type: Literal["level", "rainfall", "y"], config: Config
 ):
@@ -86,8 +82,6 @@ def get_preprocessing_layer(
             return StandardPreprocessing()
         case PreprocessingType.QUANTILE:
             return QuantilePreprocessing(config)
-        case PreprocessingType.MINMAX:
-            raise NotImplementedError
         case PreprocessingType.NONE:
             return IdentityPreprocessing()
 
@@ -118,7 +112,7 @@ class BaseTimeSeriesModel(LightningModule):
         self,
         features_with_time_dim: torch.FloatTensor,
         features_without_time_dim: torch.FloatTensor,
-    ):
+    ) -> torch.FloatTensor:
         """Forward pass of the model.
 
         Args:
@@ -126,6 +120,14 @@ class BaseTimeSeriesModel(LightningModule):
             features_without_time (torch.FloatTensor): Shape (batch_size, -1)
         """
         pass
+
+    def get_example_forecast_input(self, bs=1, return_raw=False):
+        return (
+            torch.zeros(bs, 2, dtype=torch.long),
+            torch.zeros(bs, self.required_samples, self.n_context_features),
+            return_raw,
+        )
+
 
     @property
     def num_time_features(self):
@@ -452,17 +454,9 @@ class MLPBlock(nn.Sequential):
             nn.Linear(
                 input_size,
                 output_size,
-                bias=not config.norm_before_activation and config.mlp_norm != Norm.NONE,
-            ),
-            conditional_layer(
-                get_mlp_norm_layer(config, output_size),
-                config.norm_before_activation,
             ),
             get_activation_function(config),
-            conditional_layer(
-                get_mlp_norm_layer(config, output_size),
-                not config.norm_before_activation,
-            ),
+            get_mlp_norm_layer(config, output_size),
             get_dropout_layer(config) if not is_last else nn.Identity(),
         )
 
@@ -475,18 +469,9 @@ class ConvBlock(nn.Sequential):
                 output_features,
                 config.conv_kernel_size,
                 padding='same',
-                bias=not config.norm_before_activation
-                and config.conv_norm != Norm.NONE,
-            ),
-            conditional_layer(
-                get_conv_norm_layer(config, output_features),
-                config.norm_before_activation,
             ),
             get_activation_function(config),
-            conditional_layer(
-                get_conv_norm_layer(config, output_features),
-                not config.norm_before_activation,
-            ),
+            get_conv_norm_layer(config, output_features),
             get_dropout_layer(config),
         )
 

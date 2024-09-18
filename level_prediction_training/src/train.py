@@ -20,7 +20,7 @@ import wandb
 from .config import Config
 from .dataset import DataModule
 from .model import TimeSeriesModel
-from polars import DataFrame
+import polars as pl
 from pathlib import Path
 from torch.nn import Module as TorchModule
 
@@ -46,8 +46,8 @@ def setup_logging(default_path="logging.yaml", default_level=logging.INFO):
 
 
 def save_model(
-    model: TorchModule,
-    stations: DataFrame,
+    model: TimeSeriesModel,
+    stations: pl.DataFrame,
     config: Config,
 ):
     import json
@@ -59,26 +59,25 @@ def save_model(
     if not model_dir.exists():
         os.makedirs(model_dir)
 
-    model_file_path = model_dir / "model_torchscript.pt"
+    model_file_path = model_dir / "model_torchscript.onnx"
     inference_config_file_path = model_dir / "inference_config.json"
 
     # Save model as TorchScript
 
     log.info(f"Saving model to {model_file_path}")
 
-    model_torchscript = torch.jit.script(model.to("cpu").eval())
-    model_torchscript = torch.jit.optimize_for_inference(model_torchscript)
-    model_torchscript.save(model_file_path)
+    onnx_program = torch.onnx.dynamo_export(
+        model.to("cpu").eval().forecast,
+        *model.get_example_forecast_input()
+    )
+    onnx_program.save(model_file_path)
 
     # Save config for inference
 
     inference_config = dict(
-        target_col=config.target_col,
         prediction_length=config.prediction_length,
-        context_length=config.context_length,
-        quantiles=list(config.quantiles),
+        input_columns = stations.select(pl.col("flooding_api_notation").alias("station_id"), pl.col("parameter")).to_dict(as_series=False),
         thresholds=list(config.thresholds),
-        stations=stations.to_dict(as_series=False),
     )
 
     with open(inference_config_file_path, "w") as f:
@@ -101,17 +100,15 @@ def train(config: Optional[Config] = None):
     if config is None:
         seed = random.randint(0, 2**16 - 1)
         wandb.init(project="river-level-forecasting", config={"seed": seed})
-        config = Config(**wandb.config)
-    else:
-        # config.num_mlp_blocks = 5
-        # config.mlp_hidden_size = 8
-        # config.conv_kernel_size = 5
-        # config.conv_hidden_size = 48
-        # config.num_conv_blocks = 3
-        # config.conv_norm = "layer"
-        # config.activation_function = "swish"
-        # config.norm_before_activation = False
 
+        config_dict = dict(**wandb.config)
+        config_dict["level_preprocessing"] = config_dict["x_preprocessing"]
+        config_dict["rainfall_preprocessing"] = config_dict["x_preprocessing"]
+        # remove x_preprocessing from config_dict
+        config_dict.pop("x_preprocessing")
+
+        config = Config(**config_dict)
+    else:
         wandb.init(project="river-level-forecasting", config=asdict(config))
         seed = config.seed if config.seed is not None else random.randint(0, 2**16 - 1)
 
@@ -127,7 +124,7 @@ def train(config: Optional[Config] = None):
 
     log.info(f"Using config: {config}")
 
-    # seed_everything(seed)
+    seed_everything(seed)
 
     log.info(f"wandb run: {wandb.run.get_url()}")
 
@@ -145,6 +142,6 @@ def train(config: Optional[Config] = None):
 
     trainer.fit(model, data_module)
 
-    # save_model(model, data_module.stations, config)
+    save_model(model, data_module.stations, config)
 
     wandb.finish()
