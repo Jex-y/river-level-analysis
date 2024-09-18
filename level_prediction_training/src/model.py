@@ -9,12 +9,6 @@ from torch import nn
 from torch.nn.functional import binary_cross_entropy_with_logits, gaussian_nll_loss
 
 from .config import ActivationFunction, Config, Norm, PreprocessingType
-from .preprocessing import (
-    IdentityPreprocessing,
-    QuantilePreprocessing,
-    StandardPreprocessing,
-)
-
 
 def add_prefix(prefix, dictionary):
     return {f"{prefix}_{k}": v for k, v in dictionary.items()}
@@ -66,25 +60,6 @@ def get_dropout_layer(config: Config):
     return nn.Dropout(config.dropout) if config.dropout > 0 else nn.Identity()
 
 
-def get_preprocessing_layer(
-    feature_type: Literal["level", "rainfall", "y"], config: Config
-):
-    match feature_type:
-        case "level":
-            preprocessing_type = config.level_preprocessing
-        case "rainfall":
-            preprocessing_type = config.rainfall_preprocessing
-        case "y":
-            preprocessing_type = config.y_preprocessing
-
-    match preprocessing_type:
-        case PreprocessingType.STANDARD:
-            return StandardPreprocessing()
-        case PreprocessingType.QUANTILE:
-            return QuantilePreprocessing(config)
-        case PreprocessingType.NONE:
-            return IdentityPreprocessing()
-
 
 class BaseTimeSeriesModel(LightningModule):
     # Buffers
@@ -99,14 +74,6 @@ class BaseTimeSeriesModel(LightningModule):
         self.x_column_names = input_column_names
 
         self.target_feature_index = list(input_column_names).index(config.target_col)
-
-        self.level_preprocessing = get_preprocessing_layer("level", self.config)
-        self.rainfall_preprocessing = get_preprocessing_layer("rainfall", self.config)
-        self.level_rolling_preprocessing = get_preprocessing_layer("level", self.config)
-        self.rainfall_rolling_preprocessing = get_preprocessing_layer(
-            "rainfall", self.config
-        )
-        self.y_preprocessing = get_preprocessing_layer("y", self.config)
 
     def forward(
         self,
@@ -158,31 +125,6 @@ class BaseTimeSeriesModel(LightningModule):
         context = context[:, -self.config.context_length :]
         # Shape should be (batch_size, context_length, num_features)
 
-        # Apply preprocessing
-
-        context[:, :, self.level_cols] = self.level_preprocessing.transform(
-            context[:, :, self.level_cols]
-        )
-        context[:, :, self.rainfall_cols] = self.rainfall_preprocessing.transform(
-            context[:, :, self.rainfall_cols]
-        )
-
-        rolling_level_cols = self.level_cols.repeat(len(self.config.rolling_windows))
-        rolling_rainfall_cols = self.rainfall_cols.repeat(
-            len(self.config.rolling_windows)
-        )
-
-        rolling_features[:, rolling_level_cols] = (
-            self.level_rolling_preprocessing.transform(
-                rolling_features[:, rolling_level_cols]
-            )
-        )
-
-        rolling_features[:, rolling_rainfall_cols] = (
-            self.rainfall_rolling_preprocessing.transform(
-                rolling_features[:, rolling_rainfall_cols]
-            )
-        )
 
         # mean, quantiles, thresholds_logits
         last_dim_splits = [1, 1, len(self.config.thresholds)]
@@ -192,7 +134,7 @@ class BaseTimeSeriesModel(LightningModule):
             torch.cat([datetime_features, rolling_features], dim=-1),
         ).view(batch_size, self.config.prediction_length, sum(last_dim_splits))
 
-        pred_mean_transformed, pred_log_variance_transformed, pred_thresholds_logits = (
+        pred_mean, pred_log_variance, pred_thresholds_logits = (
             torch.split(
                 output,
                 last_dim_splits,
@@ -202,38 +144,17 @@ class BaseTimeSeriesModel(LightningModule):
 
         if return_raw:
             return (
-                pred_mean_transformed,
-                pred_log_variance_transformed,
+                pred_mean,
+                pred_log_variance,
                 pred_thresholds_logits,
             )
 
         # To deal with variance and quantile transform, could find +/-1std, +/-2std, ect, inverse quantile transform these and return them as well.
-        pred_stddevs_transformed = (
-            0.5 * pred_log_variance_transformed
-        ).exp()  # Can this be reduced?
+        pred_stddev = (
+            0.5 * pred_log_variance
+        ).exp()
 
-        pred_bounds = torch.cat(
-            [
-                pred_mean_transformed + (pred_stddevs_transformed * stdev * sign)
-                for stdev in self.config.stdevs
-                for sign in [-1, 1]
-            ],
-            dim=-1,
-        )
-
-        pred_mean = self.y_preprocessing.inverse_transform(pred_mean_transformed)
-        pred_bounds = self.y_preprocessing.inverse_transform(
-            rearrange(pred_bounds, "bs np nb-> (bs np nb) 1")
-        )
-        pred_bounds = rearrange(
-            pred_bounds,
-            "(bs np nb) 1 -> bs np nb",
-            bs=batch_size,
-            np=self.config.prediction_length,
-            nb=len(self.config.stdevs) * 2,
-        )
-
-        return pred_mean, pred_bounds, pred_thresholds_logits.sigmoid()
+        return pred_mean, pred_stddev, pred_thresholds_logits.sigmoid()
 
     def calculate_timestamp_features(self, time: torch.LongTensor) -> torch.FloatTensor:
         # time is expected to be of shape (batch_size, 2)
@@ -264,58 +185,6 @@ class BaseTimeSeriesModel(LightningModule):
             dim=1,
         )
 
-    def fit_preprocessing(self, x: torch.Tensor, y: torch.Tensor):
-        level_col_regex = re.compile(r"level$")
-        rainfall_col_regex = re.compile(r"rainfall$")
-
-        level_cols = torch.tensor(
-            [bool(level_col_regex.search(col)) for col in self.x_column_names],
-            device=x.device,
-        )
-
-        rainfall_cols = torch.tensor(
-            [bool(rainfall_col_regex.search(col)) for col in self.x_column_names],
-            device=x.device,
-        )
-
-        self.register_buffer("level_cols", level_cols)
-        self.register_buffer("rainfall_cols", rainfall_cols)
-
-        self.level_preprocessing.fit(x[:, level_cols])
-        self.rainfall_preprocessing.fit(x[:, rainfall_cols])
-
-        # X is of shape (n_samples, n_features)
-
-        # rolling features should be of shape (n_samples - longest_window + 1, n_features * n_windows)
-
-        n_output_samples = x.shape[0] - max(self.config.rolling_windows) + 1
-        # Get only last n_output_samples for each window size to make sure they are all the same length
-
-        # x.unfold(0, window, 1) creates a tensor of shape (n_samples - window + 1, n_features, window)
-        # we then want to take the mean of the window, this is dim -1 of the unfolded tensor
-        # Output should then be of shape (n_samples - window + 1, n_features)
-
-        rolling_features = torch.cat(
-            [
-                x.unfold(0, window, 1).mean(dim=-1)[-n_output_samples:]
-                for window in self.config.rolling_windows
-            ],
-            dim=-1,
-        )
-        # Last dimension should be (n_features at window 1, n_features at window 2, ...)
-
-        self.level_rolling_preprocessing.fit(
-            rolling_features[:, level_cols.repeat(len(self.config.rolling_windows))]
-        )
-
-        self.rainfall_rolling_preprocessing.fit(
-            rolling_features[:, rainfall_cols.repeat(len(self.config.rolling_windows))]
-        )
-
-        self.y_preprocessing.fit(y)
-
-        return self
-
     def calculate_metrics(
         self,
         batch: tuple[torch.LongTensor, torch.FloatTensor, torch.FloatTensor],
@@ -323,24 +192,22 @@ class BaseTimeSeriesModel(LightningModule):
     ):
         x_datetime, x, y_true = batch
         (
-            pred_mean_transformed,
-            pred_log_variance_transformed,
+            pred_mean,
+            pred_log_variance,
             pred_thresholds_logits,
         ) = self.forecast(x_datetime, x, return_raw=True)
         # return logits to improve numerical stability
 
         thresholds = torch.tensor(self.config.thresholds, device=y_true.device)
-        y_true_transformed = self.y_preprocessing.transform(y_true)
-        pred_mean = self.y_preprocessing.inverse_transform(pred_mean_transformed)
 
         # Mean Absolute Error loss
 
         # NNL Loss
-        squared_error_transformed = (pred_mean_transformed - y_true_transformed) ** 2
+        squared_error = (pred_mean - y_true) ** 2
 
 
         nnl_loss = reduce(
-            0.5 * (pred_log_variance_transformed + (squared_error_transformed / pred_log_variance_transformed.exp().clamp(min=1e-6)) + math.log(2 * math.pi)),
+            0.5 * (pred_log_variance + (squared_error / pred_log_variance.exp().clamp(min=1e-6)) + math.log(2 * math.pi)),
             "bs np 1 -> np",
             "mean",
         )
@@ -366,47 +233,21 @@ class BaseTimeSeriesModel(LightningModule):
         if not return_metrics:
             return total_loss
 
-        # y_pred_over_threhsold = torch.sigmoid(pred_thresholds_logits) > 0.5
-
-        # threshold_accuracy = reduce(
-        #     (y_true_over_threshold == y_pred_over_threhsold).float(),
-        #     "bs np nt -> np nt",
-        #     "mean",
-        # )
-
-        # Log metrics to wandb
-
-        # pred_time_ahead = (
-        #     torch.linspace(
-        #         1, self.config.prediction_length, self.config.prediction_length
-        #     )
-        #     * 15
-        # )
-
-        # nnl_loss_table = wandb.Table(
-        #     data=[
-        #         [pred_time_ahead[i].item(), nnl_loss[i].item()]
-        #         for i in range(self.config.prediction_length)
-        #     ],
-        #     columns=["Time Ahead", "NLL Loss"],
-        # )
-        # wandb.log(
-        #     {
-        #         "nnl_loss": wandb.plot.line(
-        #             nnl_loss_table,
-        #             "x",
-        #             "y",
-        #             title="NLL Loss vs time ahead",
-        #         )
-        #     }
-        # )
+        pred_stddev = (
+            0.5 * pred_log_variance
+        ).exp()
 
         return total_loss, {
             "total_loss": total_loss,
             "total_nnl_loss": nnl_loss.mean(),
             "total_threshold_loss": threshold_loss.mean(),
-            "mse_transformed": squared_error_transformed.mean(),
-            "mse_true_value": torch.square(pred_mean - y_true).mean()
+            "mse_transformed": squared_error.mean(),
+            "mse_true_value": torch.square(pred_mean - y_true).mean(),
+            "threshold_accuracy": (pred_thresholds_logits.sigmoid() > 0.5).eq(y_true_over_threshold).float().mean(),
+            **{
+                f"{stdevs} stdev coverage": (y_true > (pred_mean - stdevs * pred_stddev)).float().mean()
+                for stdevs in (1, 2)
+            }
             # "nnl_loss": nnl_loss,
             # "threshold_loss": threshold_loss,
             # "threshold_accuracy": threshold_accuracy,

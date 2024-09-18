@@ -70,7 +70,7 @@ def save_model(
         model.to("cpu").eval().forecast,
         *model.get_example_forecast_input()
     )
-    onnx_program.save(model_file_path)
+    onnx_program.save(str(model_file_path))
 
     # Save config for inference
 
@@ -132,7 +132,7 @@ def train(config: Optional[Config] = None):
 
     model = TimeSeriesModel(
         input_column_names=data_module.x_column_names, config=config
-    ).fit_preprocessing(data_module.train_dataset.x, data_module.train_dataset.y)
+    )
 
     trainer = Trainer(
         max_epochs=config.train_epochs,
