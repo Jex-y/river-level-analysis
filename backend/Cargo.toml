@@ -1,0 +1,40 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+strip = true
+
+[dependencies]
+anyhow = "1.0.89"
+config = "0.14.0"
+ort = "=2.0.0-rc.4"
+futures = "0.3.30"
+thiserror = "1.0.63"
+tokio = { version = "1.40.0", features = ["macros", "rt-multi-thread"] }
+chrono = { version = "0.4.38", features = ["serde"] }
+reqwest = { version = "0.12.7", default-features = false, features = [
+    "rustls-tls",
+] }
+serde = "1.0.210"
+axum = "0.7.5"
+tracing-subscriber = "0.3.18"
+tracing = { version = "0.1.40", features = ["attributes"] }
+tower-http = { version = "0.5.2", features = ["trace"] }
+tower = "0.5.1"
+num_cpus = "1.16.0"
+polars = { version = "0.43.1", features = [
+    "nightly",
+    "performant",
+    "lazy",
+    "ndarray",
+    "temporal",
+    "decompress",
+    "polars-io",
+    "dtype-datetime",
+    "timezones",
+    "strings",
+] }
+ndarray = "0.15"
+serde_json = "1.0.128"
