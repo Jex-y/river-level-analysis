@@ -4,8 +4,10 @@ import os
 import random
 import warnings
 from dataclasses import asdict
+from pathlib import Path
 from typing import Optional
 
+import polars as pl
 import torch
 import yaml
 from pytorch_lightning import (
@@ -20,9 +22,6 @@ import wandb
 from .config import Config
 from .dataset import DataModule
 from .model import TimeSeriesModel
-import polars as pl
-from pathlib import Path
-from torch.nn import Module as TorchModule
 
 
 def quiet_output():
@@ -62,13 +61,12 @@ def save_model(
     model_file_path = model_dir / "model_torchscript.onnx"
     inference_config_file_path = model_dir / "inference_config.json"
 
-    # Save model as TorchScript
+    # Save model as ONNX
 
     log.info(f"Saving model to {model_file_path}")
 
     onnx_program = torch.onnx.dynamo_export(
-        model.to("cpu").eval().forecast,
-        *model.get_example_forecast_input()
+        model.to("cpu").eval().forecast, *model.get_example_forecast_input()
     )
     onnx_program.save(str(model_file_path))
 
@@ -76,36 +74,28 @@ def save_model(
 
     inference_config = dict(
         prediction_length=config.prediction_length,
-        input_columns = stations.select(pl.col("flooding_api_notation").alias("station_id"), pl.col("parameter")).to_dict(as_series=False),
+        prev_timesteps=model.required_samples,
+        input_columns=stations.select(
+            pl.col("flooding_api_notation").alias("station_id"),
+            pl.col("parameter"),
+            pl.col("label"),
+        ).to_dicts(),
         thresholds=list(config.thresholds),
     )
 
     with open(inference_config_file_path, "w") as f:
         json.dump(inference_config, f)
 
-    # Add artifacts to wandb
-
-    wandb.log_artifact(model_file_path, name="trained_model", type="model")
-    wandb.log_artifact(
-        inference_config_file_path, name="inference_config", type="config"
-    )
-
 
 def train(config: Optional[Config] = None):
     setup_logging()
     log = logging.getLogger("training")
-
-
 
     if config is None:
         seed = random.randint(0, 2**16 - 1)
         wandb.init(project="river-level-forecasting", config={"seed": seed})
 
         config_dict = dict(**wandb.config)
-        config_dict["level_preprocessing"] = config_dict["x_preprocessing"]
-        config_dict["rainfall_preprocessing"] = config_dict["x_preprocessing"]
-        # remove x_preprocessing from config_dict
-        config_dict.pop("x_preprocessing")
 
         config = Config(**config_dict)
     else:

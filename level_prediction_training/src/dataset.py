@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Iterable
 
 import httpx
 import polars as pl
@@ -47,7 +46,17 @@ class DataModule(LightningDataModule):
             f"Loaded {len(train_df)} training samples and {len(test_df)} test samples"
         )
 
-        self.x_column_names = train_df.drop("datetime").columns
+        # Sort columns alphabetically to ensure consistent order for inference
+        self.x_column_names = sorted(list(train_df.drop("datetime").columns))
+        train_df = train_df.select(["datetime", *self.x_column_names])
+        test_df = test_df.select(["datetime", *self.x_column_names])
+        self.stations = self.stations.sort("label")
+
+        # This doesn't deal with the case where a station measures multiple parameters
+        assert len(self.stations["label"].unique()) == len(self.stations), (
+            "Each station should have a unique label. "
+            "Stations measured multiple parameters are not currently supported."
+        )
 
         # For datetime, calculate integer columns for day of year and year
         x_train_datetime = train_df.select(
@@ -59,7 +68,9 @@ class DataModule(LightningDataModule):
         y_train = train_df.select(config.target_col).to_torch().type(torch.float32)
 
         x_test_datetime = test_df.select(
-            pl.col("datetime").dt.ordinal_day().alias("day_of_year").cast(pl.Int32),
+            (pl.col("datetime").dt.ordinal_day() - 1)
+            .alias("day_of_year")
+            .cast(pl.Int32),
             pl.col("datetime").dt.year().alias("year").cast(pl.Int32),
         ).to_torch()
         x_test = test_df.drop("datetime").to_torch().type(torch.float32)
@@ -108,7 +119,7 @@ class DataModule(LightningDataModule):
 class TimeSeriesDataset(Dataset):
     def __init__(
         self,
-        x_datetime: Iterable[datetime],
+        x_datetime: list[datetime],
         x: torch.FloatTensor,
         y: torch.FloatTensor,
         x_len: int,

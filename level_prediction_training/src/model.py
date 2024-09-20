@@ -1,14 +1,14 @@
 import math
-import re
-from typing import Iterable, Literal
+from typing import Iterable
 
 import torch
-from einops import rearrange, reduce
+from einops import reduce
 from pytorch_lightning import LightningModule
 from torch import nn
-from torch.nn.functional import binary_cross_entropy_with_logits, gaussian_nll_loss
+from torch.nn.functional import binary_cross_entropy_with_logits
 
-from .config import ActivationFunction, Config, Norm, PreprocessingType
+from .config import ActivationFunction, Config, Norm
+
 
 def add_prefix(prefix, dictionary):
     return {f"{prefix}_{k}": v for k, v in dictionary.items()}
@@ -60,7 +60,6 @@ def get_dropout_layer(config: Config):
     return nn.Dropout(config.dropout) if config.dropout > 0 else nn.Identity()
 
 
-
 class BaseTimeSeriesModel(LightningModule):
     # Buffers
     level_cols: torch.BoolTensor
@@ -95,7 +94,6 @@ class BaseTimeSeriesModel(LightningModule):
             return_raw,
         )
 
-
     @property
     def num_time_features(self):
         return self.n_context_features
@@ -125,7 +123,6 @@ class BaseTimeSeriesModel(LightningModule):
         context = context[:, -self.config.context_length :]
         # Shape should be (batch_size, context_length, num_features)
 
-
         # mean, quantiles, thresholds_logits
         last_dim_splits = [1, 1, len(self.config.thresholds)]
 
@@ -134,12 +131,10 @@ class BaseTimeSeriesModel(LightningModule):
             torch.cat([datetime_features, rolling_features], dim=-1),
         ).view(batch_size, self.config.prediction_length, sum(last_dim_splits))
 
-        pred_mean, pred_log_variance, pred_thresholds_logits = (
-            torch.split(
-                output,
-                last_dim_splits,
-                dim=-1,
-            )
+        pred_mean, pred_log_variance, pred_thresholds_logits = torch.split(
+            output,
+            last_dim_splits,
+            dim=-1,
         )
 
         if return_raw:
@@ -150,9 +145,7 @@ class BaseTimeSeriesModel(LightningModule):
             )
 
         # To deal with variance and quantile transform, could find +/-1std, +/-2std, ect, inverse quantile transform these and return them as well.
-        pred_stddev = (
-            0.5 * pred_log_variance
-        ).exp()
+        pred_stddev = (0.5 * pred_log_variance).exp()
 
         return pred_mean, pred_stddev, pred_thresholds_logits.sigmoid()
 
@@ -205,9 +198,13 @@ class BaseTimeSeriesModel(LightningModule):
         # NNL Loss
         squared_error = (pred_mean - y_true) ** 2
 
-
         nnl_loss = reduce(
-            0.5 * (pred_log_variance + (squared_error / pred_log_variance.exp().clamp(min=1e-6)) + math.log(2 * math.pi)),
+            0.5
+            * (
+                pred_log_variance
+                + (squared_error / pred_log_variance.exp().clamp(min=1e-6))
+                + math.log(2 * math.pi)
+            ),
             "bs np 1 -> np",
             "mean",
         )
@@ -233,9 +230,7 @@ class BaseTimeSeriesModel(LightningModule):
         if not return_metrics:
             return total_loss
 
-        pred_stddev = (
-            0.5 * pred_log_variance
-        ).exp()
+        pred_stddev = (0.5 * pred_log_variance).exp()
 
         return total_loss, {
             "total_loss": total_loss,
@@ -243,11 +238,18 @@ class BaseTimeSeriesModel(LightningModule):
             "total_threshold_loss": threshold_loss.mean(),
             "mse_transformed": squared_error.mean(),
             "mse_true_value": torch.square(pred_mean - y_true).mean(),
-            "threshold_accuracy": (pred_thresholds_logits.sigmoid() > 0.5).eq(y_true_over_threshold).float().mean(),
+            "threshold_accuracy": (pred_thresholds_logits.sigmoid() > 0.5)
+            .eq(y_true_over_threshold)
+            .float()
+            .mean(),
             **{
-                f"{stdevs} stdev coverage": (y_true > (pred_mean - stdevs * pred_stddev)).float().mean()
+                f"{stdevs} stdev coverage": (
+                    y_true > (pred_mean - stdevs * pred_stddev)
+                )
+                .float()
+                .mean()
                 for stdevs in (1, 2)
-            }
+            },
             # "nnl_loss": nnl_loss,
             # "threshold_loss": threshold_loss,
             # "threshold_accuracy": threshold_accuracy,
@@ -309,7 +311,7 @@ class ConvBlock(nn.Sequential):
                 input_features,
                 output_features,
                 config.conv_kernel_size,
-                padding='same',
+                padding="same",
             ),
             get_activation_function(config),
             get_conv_norm_layer(config, output_features),
