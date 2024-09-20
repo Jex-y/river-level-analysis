@@ -11,10 +11,10 @@ steps:
       [
         "build",
         "-t",
-        "docker pull europe-west2-docker.pkg.dev/durham-river-level/containers/backend:latest",
+        "europe-west2-docker.pkg.dev/durham-river-level/containers/backend:latest",
         "--cache-from",
-        "docker pull europe-west2-docker.pkg.dev/durham-river-level/containers/backend:latest",
-        "./backend",
+        "europe-west2-docker.pkg.dev/durham-river-level/containers/backend:latest",
+        ".",
       ]
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud

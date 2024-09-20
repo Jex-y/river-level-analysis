@@ -1,7 +1,7 @@
 use axum::Router;
 
-mod level_forecast;
-use level_forecast::{create_forecast_routes, ColSpec, ForecastConfig, Parameter};
+mod level;
+use level::{create_level_routes, ColSpec, LevelServiceConfig, Parameter};
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
 
@@ -20,10 +20,6 @@ struct ForecastConfigFile {
     thresholds: Vec<f32>,
 }
 
-async fn index() -> &'static str {
-    "Hello, World!"
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -37,15 +33,16 @@ async fn main() -> anyhow::Result<()> {
     )?;
 
     let app = Router::new()
-        .route("/", axum::routing::get(index))
         .nest(
-            "/level-forecast",
-            create_forecast_routes(ForecastConfig {
+            "/api/level",
+            create_level_routes(LevelServiceConfig {
                 model_inference_threads: None,
                 model_onnx_path: "./model/model.onnx".to_string(),
                 max_concurrent_requests: None,
                 required_timesteps: config.prev_timesteps,
                 thresholds: config.thresholds,
+                target_station_id: "0240120".to_string(),
+                target_parameter: Parameter::Level,
                 model_input_columns: config
                     .input_columns
                     .iter()
