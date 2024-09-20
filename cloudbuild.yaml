@@ -1,0 +1,32 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    entrypoint: "bash"
+    args:
+      [
+        "-c",
+        "docker pull europe-west2-docker.pkg.dev/durham-river-level/containers/backend:latest || exit 0",
+      ]
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "docker pull europe-west2-docker.pkg.dev/durham-river-level/containers/backend:latest",
+        "--cache-from",
+        "docker pull europe-west2-docker.pkg.dev/durham-river-level/containers/backend:latest",
+        ".",
+      ]
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      [
+        "run",
+        "deploy",
+        "backend",
+        "--image",
+        "europe-west2-docker.pkg.dev/durham-river-level/containers/backend:latest",
+        "--region",
+        "europe-west2",
+      ]
+images:
+  - "europe-west2-docker.pkg.dev/durham-river-level/containers/backend:latest"

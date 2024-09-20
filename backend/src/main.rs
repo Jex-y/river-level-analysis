@@ -31,8 +31,10 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     // Read forecast config from file and deserialize it
-    let config: ForecastConfigFile =
-        serde_json::from_str(&std::fs::read_to_string("./model/inference_config.json")?)?;
+    let config: ForecastConfigFile = serde_json::from_str(
+        &std::fs::read_to_string("./model/inference_config.json")
+            .expect("Inference config file not found."),
+    )?;
 
     let app = Router::new()
         .route("/", axum::routing::get(index))
@@ -60,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()));
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:8080").await?;
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
     tracing::info!("Listening on {}", listener.local_addr()?);
 
     axum::serve(listener, app).await?;
