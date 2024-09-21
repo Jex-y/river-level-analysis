@@ -18,7 +18,7 @@ reqwest = { version = "0.12.7", default-features = false, features = [
     "rustls-tls",
 ] }
 serde = "1.0.210"
-axum = { version = "0.7.5", features = ["query"] }
+axum = { version = "0.7.5", features = ["query", "macros"] }
 tracing-subscriber = "0.3.18"
 tracing = { version = "0.1.40", features = ["attributes"] }
 tower-http = { version = "0.5.2", features = ["trace"] }
@@ -29,13 +29,16 @@ polars = { version = "0.43.1", features = [
     "dtype-datetime",
     "dtype-struct",
     "lazy",
+    "csv",
     "ndarray",
     "nightly",
     "performant",
     "polars-io",
     "strings",
+    "serde",
     "temporal",
     "timezones",
+    "cloud",
 ] }
 ndarray = "0.15"
 serde_json = "1.0.128"

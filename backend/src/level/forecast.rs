@@ -3,12 +3,7 @@ use super::{
     fetch_data::get_many_readings,
     models::{ColSpec, ForecastRecord, Parameter, ServiceState},
 };
-use axum::{
-    extract::State,
-    http::{header, HeaderMap},
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::State, response::IntoResponse, Json};
 use chrono::{DateTime, Datelike, Utc};
 use ndarray::{s, Array2};
 use ort::Session;
@@ -114,22 +109,16 @@ pub async fn get_forecast(
     )
     .await?;
 
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        header::CACHE_CONTROL,
-        "public, max-age=300".parse().unwrap(),
-    );
-
-    Ok((headers, Json(forecast)))
+    Ok(Json(forecast))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{super::fetch_data::build_client, *};
 
     #[tokio::test]
     async fn test_collect_data() {
-        let http_client = Client::new();
+        let http_client = build_client();
         let col_specs = vec![
             ColSpec {
                 station_id: "025878".to_string(),

@@ -27,4 +27,7 @@ pub struct LevelServiceConfig {
 
     /// Target parameter
     pub target_parameter: Parameter,
+
+    /// Cache ttl. Defaults to 300 seconds.
+    pub cache_ttl: Option<u64>,
 }

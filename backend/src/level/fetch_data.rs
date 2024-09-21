@@ -29,7 +29,7 @@ pub async fn get_station_readings(
         .unwrap();
 
     let response = http_client
-        .get(url)
+        .get(url.clone())
         .header(header::ACCEPT, "text/csv")
         .query(&[("_sorted", "true"), ("_limit", last_n.to_string().as_ref())])
         .send()
@@ -37,6 +37,10 @@ pub async fn get_station_readings(
         .error_for_status()?;
 
     let response_bytes = response.bytes().await?;
+
+    // TODO: Improve CSV parsing performance
+    // This seems to block the thread!
+    // Could also keep the dataframes around and only add new data when needed
 
     Ok(CsvReadOptions::default()
         .with_has_header(true)

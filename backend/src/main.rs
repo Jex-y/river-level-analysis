@@ -23,7 +23,7 @@ struct ForecastConfigFile {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
+        .with_max_level(tracing::Level::DEBUG)
         .init();
 
     // Read forecast config from file and deserialize it
@@ -42,6 +42,7 @@ async fn main() -> anyhow::Result<()> {
                 required_timesteps: config.prev_timesteps,
                 thresholds: config.thresholds,
                 target_station_id: "0240120".to_string(),
+                cache_ttl: None,
                 target_parameter: Parameter::Level,
                 model_input_columns: config
                     .input_columns

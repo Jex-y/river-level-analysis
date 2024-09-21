@@ -1,9 +1,10 @@
 use super::config::LevelServiceConfig;
+use axum::extract::FromRef;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, FromRef)]
 pub struct ServiceState {
     pub forecast_model: Arc<ort::Session>,
     pub http_client: reqwest::Client,
