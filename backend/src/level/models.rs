@@ -2,7 +2,7 @@ use super::config::LevelServiceConfig;
 use axum::extract::FromRef;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
-use std::sync::Arc;
+use std::{fmt::Display, str::FromStr, sync::Arc};
 
 #[derive(Debug, Clone, FromRef)]
 pub struct ServiceState {
@@ -87,7 +87,7 @@ pub enum Parameter {
     Rainfall,
 }
 
-impl std::fmt::Display for Parameter {
+impl Display for Parameter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Parameter::Level => write!(f, "level"),
@@ -95,6 +95,19 @@ impl std::fmt::Display for Parameter {
         }
     }
 }
+
+impl FromStr for Parameter {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "level" => Ok(Self::Level),
+            "rainfall" => Ok(Self::Rainfall),
+            _ => Err(anyhow::anyhow!("Invalid parameter: {}", s)),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ColSpec {
     pub station_id: String,

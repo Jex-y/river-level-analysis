@@ -6,7 +6,7 @@ mod models;
 mod observed;
 
 use axum::{extract::State, http::header, middleware, response::Response, routing::get, Router};
-pub use config::LevelServiceConfig;
+pub use config::{LevelServiceConfig, LevelServiceConfigFile};
 use models::ServiceState;
 pub use models::{ColSpec, Parameter};
 

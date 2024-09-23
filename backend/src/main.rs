@@ -1,23 +1,21 @@
-use axum::Router;
+use axum::{http::HeaderValue, Router};
 
 mod level;
-use level::{create_level_routes, ColSpec, LevelServiceConfig, Parameter};
+use http::Method;
+use level::{create_level_routes, LevelServiceConfigFile};
 use tower::ServiceBuilder;
-use tower_http::trace::TraceLayer;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 #[derive(serde::Deserialize)]
-struct ForecastConfigFileInputColumn {
-    station_id: String,
-    parameter: String,
-    label: String,
-}
+struct ConfigFile {
+    #[serde(flatten)]
+    level_service: LevelServiceConfigFile,
 
-#[derive(serde::Deserialize)]
-struct ForecastConfigFile {
-    prediction_length: usize,
-    prev_timesteps: usize,
-    input_columns: Vec<ForecastConfigFileInputColumn>,
-    thresholds: Vec<f32>,
+    /// Host to listen on.
+    host: &'static str,
+
+    /// Port to listen on.
+    port: u16,
 }
 
 #[tokio::main]
@@ -26,41 +24,29 @@ async fn main() -> anyhow::Result<()> {
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
-    // Read forecast config from file and deserialize it
-    let config: ForecastConfigFile = serde_json::from_str(
-        &std::fs::read_to_string("./model/inference_config.json")
-            .expect("Inference config file not found."),
-    )?;
+    let config: ConfigFile = config::Config::builder()
+        .add_source(config::File::with_name("./config/default.json"))
+        .add_source(config::Environment::with_prefix("APP"))
+        .build()
+        .expect("Failed to build config")
+        .try_deserialize()
+        .expect("Failed to deserialize config");
 
     let app = Router::new()
         .nest(
             "/api/level",
-            create_level_routes(LevelServiceConfig {
-                model_inference_threads: None,
-                model_onnx_path: "./model/model.onnx".to_string(),
-                max_concurrent_requests: None,
-                required_timesteps: config.prev_timesteps,
-                thresholds: config.thresholds,
-                target_station_id: "0240120".to_string(),
-                cache_ttl: None,
-                target_parameter: Parameter::Level,
-                model_input_columns: config
-                    .input_columns
-                    .iter()
-                    .map(|input_column| ColSpec {
-                        station_id: input_column.station_id.clone(),
-                        parameter: match input_column.parameter.as_str() {
-                            "level" => Parameter::Level,
-                            "rainfall" => Parameter::Rainfall,
-                            _ => panic!("Unknown parameter"),
-                        },
-                    })
-                    .collect(),
-            })?,
+            create_level_routes(config.level_service.try_into()?)?,
         )
-        .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()));
+        .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
+        .layer(
+            CorsLayer::new()
+                .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
+                .allow_methods([Method::GET]),
+        );
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
+    let listener =
+        tokio::net::TcpListener::bind(format!("{}:{}", config.host, config.port)).await?;
+
     tracing::info!("Listening on {}", listener.local_addr()?);
 
     axum::serve(listener, app).await?;
