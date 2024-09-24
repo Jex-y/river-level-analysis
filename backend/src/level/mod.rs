@@ -1,4 +1,5 @@
 mod config;
+mod data_store;
 mod errors;
 mod fetch_data;
 mod forecast;
