@@ -1,6 +1,6 @@
 LevelServiceConfig {
     model_inference_threads: None,
-    model_onnx_path: "./model/model.onnx".to_string(),
+    model_bucket: None,
     max_concurrent_requests: None,
     required_timesteps: config.prev_timesteps,
     thresholds: config.thresholds,

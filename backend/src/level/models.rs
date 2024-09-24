@@ -16,6 +16,11 @@ impl TryFrom<LevelServiceConfig> for ServiceState {
 
     fn try_from(config: LevelServiceConfig) -> anyhow::Result<Self> {
         let http_client = reqwest::Client::new();
+
+        let cloud_storage_client = cloud_storage::Client::new();
+        // let model_bucket = cloud_storage_client.bucket().read(&config.model_bucket)?;
+        // model_bucket.
+
         let model = ort::Session::builder()?
             .with_intra_threads(config.model_inference_threads.unwrap_or(num_cpus::get()))?
             .with_optimization_level(ort::GraphOptimizationLevel::Level3)?

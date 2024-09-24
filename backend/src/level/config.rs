@@ -25,8 +25,8 @@ pub struct LevelServiceConfig {
     /// Defaults to no limit.
     pub max_concurrent_requests: Option<usize>,
 
-    /// Path to the ONNX model file.
-    pub model_onnx_path: String,
+    /// Path to the ONNX model file.s
+    pub model_bucket: String,
 
     /// Number of timesteps required for the model to make a prediction.
     pub required_timesteps: usize,
