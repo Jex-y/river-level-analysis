@@ -12,7 +12,7 @@ struct ConfigFile {
     level_service: LevelServiceConfigFile,
 
     /// Host to listen on.
-    host: &'static str,
+    host: String,
 
     /// Port to listen on.
     port: u16,
@@ -26,6 +26,7 @@ async fn main() -> anyhow::Result<()> {
 
     let config: ConfigFile = config::Config::builder()
         .add_source(config::File::with_name("./config/default.json"))
+        .add_source(config::File::with_name("./model/inference_config.json"))
         .add_source(config::Environment::with_prefix("APP"))
         .build()
         .expect("Failed to build config")

@@ -10,7 +10,7 @@ pub enum GetReadingsError {
     Request(#[from] reqwest::Error),
 
     #[error("Deserialisation error: {0}")]
-    Deserialisation(#[from] polars::error::PolarsError),
+    Deserialisation(#[from] csv::Error),
 
     #[error("Failed to join all tasks: {0}")]
     Join(#[from] tokio::task::JoinError),
@@ -29,9 +29,6 @@ pub enum ModelExecutionError {
 pub enum LevelApiError {
     #[error("Error fetching data from flooding API: {0}")]
     FetchData(#[from] GetReadingsError),
-
-    #[error("Failed to parse data from flooding API: {0}")]
-    ParseData(#[from] polars::error::PolarsError),
 
     #[error("Failed to execute model: {0}")]
     ModelExecution(#[from] ModelExecutionError),

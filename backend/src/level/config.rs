@@ -9,7 +9,6 @@ struct ConfigFileInputColumn {
 
 #[derive(serde::Deserialize)]
 pub struct LevelServiceConfigFile {
-    prediction_length: usize,
     prev_timesteps: usize,
     input_columns: Vec<ConfigFileInputColumn>,
     thresholds: Vec<f32>,
@@ -25,8 +24,8 @@ pub struct LevelServiceConfig {
     /// Defaults to no limit.
     pub max_concurrent_requests: Option<usize>,
 
-    /// Path to the ONNX model file.s
-    pub model_bucket: String,
+    /// Path to the ONNX model file
+    pub model_onnx_path: String,
 
     /// Number of timesteps required for the model to make a prediction.
     pub required_timesteps: usize,
@@ -62,7 +61,7 @@ impl TryFrom<LevelServiceConfigFile> for LevelServiceConfig {
         Ok(Self {
             model_inference_threads: None,
             max_concurrent_requests: None,
-            model_onnx_path: "model.onnx".to_string(),
+            model_onnx_path: "model/model.onnx".to_string(),
             required_timesteps: config.prev_timesteps,
             model_input_columns,
             thresholds: config.thresholds,

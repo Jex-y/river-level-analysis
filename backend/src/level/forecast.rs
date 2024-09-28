@@ -7,7 +7,6 @@ use axum::{extract::State, response::IntoResponse, Json};
 use chrono::{DateTime, Datelike, Utc};
 use ndarray::{s, Array2};
 use ort::Session;
-use polars::prelude::*;
 use reqwest::Client;
 use std::sync::Arc;
 
@@ -17,31 +16,34 @@ async fn collect_data(
     required_timesteps: usize,
     max_concurrent_requests: Option<usize>,
 ) -> Result<(Array2<f32>, DateTime<Utc>), GetReadingsError> {
-    let readings = get_many_readings(
-        http_client,
-        col_specs,
-        required_timesteps,
-        max_concurrent_requests.unwrap_or(col_specs.len()),
-    )
-    .await?
-    .fill_null(FillNullStrategy::Backward(None))?
-    .tail(Some(required_timesteps));
+    todo!();
 
-    let most_recent_data: i64 = readings
-        .column("datetime")
-        .unwrap()
-        .datetime()
-        .unwrap()
-        .max()
-        .unwrap();
+    // let readings = get_many_readings(
+    //     http_client,
+    //     col_specs,
+    //     required_timesteps,
+    //     max_concurrent_requests.unwrap_or(col_specs.len()),
+    // )
+    // .await?
+    // .fill_null(FillNullStrategy::Backward(None))?
+    // .tail(Some(required_timesteps));
 
-    let most_recent_data = DateTime::from_timestamp_millis(most_recent_data).unwrap();
+    // let most_recent_data: i64 = readings
+    //     .column("datetime")
+    //     .unwrap()
+    //     .datetime()
+    //     .unwrap()
+    //     .max()
+    //     .unwrap();
 
-    let data = readings
-        .drop("datetime")?
-        .to_ndarray::<Float32Type>(IndexOrder::C)?;
+    // let most_recent_data =
+    // DateTime::from_timestamp_millis(most_recent_data).unwrap();
 
-    Ok((data, most_recent_data))
+    // let data = readings
+    //     .drop("datetime")?
+    //     .to_ndarray::<Float32Type>(IndexOrder::C)?;
+
+    // Ok((data, most_recent_data))
 }
 
 async fn run_model(
@@ -114,11 +116,11 @@ pub async fn get_forecast(
 
 #[cfg(test)]
 mod tests {
-    use super::{super::fetch_data::build_client, *};
+    use super::*;
 
     #[tokio::test]
     async fn test_collect_data() {
-        let http_client = build_client();
+        let http_client = reqwest::Client::new();
         let col_specs = vec![
             ColSpec {
                 station_id: "025878".to_string(),
