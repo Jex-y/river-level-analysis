@@ -1,7 +1,7 @@
 use super::{
     errors::LevelApiError,
     fetch_data::get_station_readings,
-    models::{ObservationRecord, ServiceState},
+    models::{ObservationRecord, ServiceState, StationQuery},
     ColSpec,
 };
 use axum::{
@@ -24,9 +24,9 @@ pub async fn get_observed(
         &state.http_client,
         ColSpec {
             station_id: state.config.target_station_id.clone(),
-            parameter: state.config.target_parameter.clone(),
+            parameter: state.config.target_parameter,
         },
-        query.num_readings.unwrap_or(4 * 24),
+        StationQuery::last_n(query.num_readings.unwrap_or(4 * 24)),
     )
     .await?;
 
@@ -35,7 +35,6 @@ pub async fn get_observed(
         .datetime()?
         .into_iter()
         .zip(data.column("value")?.f32()?.into_iter())
-        .into_iter()
         .map(|(datetime, value)| match (datetime, value) {
             (Some(datetime), Some(value)) => Ok(ObservationRecord::new(
                 DateTime::from_timestamp_millis(datetime).expect("Invalid timestamp"),

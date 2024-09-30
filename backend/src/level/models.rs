@@ -1,33 +1,18 @@
-use super::config::LevelServiceConfig;
+use super::config::{InferenceConfig, LevelServiceConfig};
 use axum::extract::FromRef;
 use chrono::{DateTime, Utc};
-use serde::Serialize;
-use std::{fmt::Display, str::FromStr, sync::Arc};
+use polars::prelude::DataFrame;
+use serde::{Deserialize, Serialize};
+use std::{fmt::Display, sync::Arc};
+use tokio::sync::Mutex;
 
 #[derive(Debug, Clone, FromRef)]
 pub struct ServiceState {
     pub forecast_model: Arc<ort::Session>,
     pub http_client: reqwest::Client,
     pub config: LevelServiceConfig,
-}
-
-impl TryFrom<LevelServiceConfig> for ServiceState {
-    type Error = anyhow::Error;
-
-    fn try_from(config: LevelServiceConfig) -> anyhow::Result<Self> {
-        let http_client = reqwest::Client::new();
-        let model = ort::Session::builder()?
-            .with_intra_threads(config.model_inference_threads.unwrap_or(num_cpus::get()))?
-            .with_optimization_level(ort::GraphOptimizationLevel::Level3)?
-            .with_parallel_execution(true)?
-            .commit_from_file(&config.model_onnx_path)?;
-
-        Ok(Self {
-            forecast_model: Arc::new(model),
-            http_client,
-            config,
-        })
-    }
+    pub inference_config: InferenceConfig,
+    pub data: Arc<Mutex<Option<DataFrame>>>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -81,7 +66,8 @@ impl ObservationRecord {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Parameter {
     Level,
     Rainfall,
@@ -96,20 +82,43 @@ impl Display for Parameter {
     }
 }
 
-impl FromStr for Parameter {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "level" => Ok(Self::Level),
-            "rainfall" => Ok(Self::Rainfall),
-            _ => Err(anyhow::anyhow!("Invalid parameter: {}", s)),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ColSpec {
     pub station_id: String,
     pub parameter: Parameter,
+}
+
+impl ColSpec {
+    pub fn to_col_name(&self) -> String {
+        format!("{}-{}", self.station_id, self.parameter)
+    }
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct StationQuery {
+    since: Option<DateTime<Utc>>,
+
+    #[serde(rename = "_limit")]
+    limit: Option<usize>,
+
+    #[serde(rename = "_sorted")]
+    sort: bool,
+}
+
+impl StationQuery {
+    pub fn since(since: DateTime<Utc>) -> Self {
+        Self {
+            since: Some(since),
+            limit: None,
+            sort: true,
+        }
+    }
+
+    pub fn last_n(n: usize) -> Self {
+        Self {
+            since: None,
+            limit: Some(n),
+            sort: true,
+        }
+    }
 }

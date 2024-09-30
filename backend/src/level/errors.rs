@@ -42,9 +42,7 @@ pub enum LevelApiError {
 
 impl IntoResponse for LevelApiError {
     fn into_response(self) -> Response {
-        let status = match self {
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        };
+        let status = StatusCode::INTERNAL_SERVER_ERROR;
 
         let body = format!("Internal server error: {}", self);
 

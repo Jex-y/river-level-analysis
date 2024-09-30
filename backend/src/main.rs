@@ -2,17 +2,17 @@ use axum::{http::HeaderValue, Router};
 
 mod level;
 use http::Method;
-use level::{create_level_routes, LevelServiceConfigFile};
+use level::{create_level_routes, LevelServiceConfig};
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 #[derive(serde::Deserialize)]
 struct ConfigFile {
     #[serde(flatten)]
-    level_service: LevelServiceConfigFile,
+    level_service: LevelServiceConfig,
 
     /// Host to listen on.
-    host: &'static str,
+    host: String,
 
     /// Port to listen on.
     port: u16,
@@ -35,7 +35,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .nest(
             "/api/level",
-            create_level_routes(config.level_service.try_into()?)?,
+            create_level_routes(config.level_service).await?,
         )
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
         .layer(

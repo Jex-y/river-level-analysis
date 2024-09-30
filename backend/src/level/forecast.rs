@@ -1,47 +1,68 @@
 use super::{
-    errors::{GetReadingsError, LevelApiError, ModelExecutionError},
-    fetch_data::get_many_readings,
-    models::{ColSpec, ForecastRecord, Parameter, ServiceState},
+    config::InferenceConfig,
+    errors::{LevelApiError, ModelExecutionError},
+    fetch_data::get_latest_data,
+    models::{ForecastRecord, ServiceState},
+    LevelServiceConfig,
 };
 use axum::{extract::State, response::IntoResponse, Json};
 use chrono::{DateTime, Datelike, Utc};
+use google_cloud_storage::{
+    client::{Client, ClientConfig},
+    http::objects::{download::Range, get::GetObjectRequest},
+};
 use ndarray::{s, Array2};
 use ort::Session;
 use polars::prelude::*;
-use reqwest::Client;
 use std::sync::Arc;
+use tracing::debug;
 
-async fn collect_data(
-    http_client: &Client,
-    col_specs: &Vec<ColSpec>,
-    required_timesteps: usize,
-    max_concurrent_requests: Option<usize>,
-) -> Result<(Array2<f32>, DateTime<Utc>), GetReadingsError> {
-    let readings = get_many_readings(
-        http_client,
-        col_specs,
-        required_timesteps,
-        max_concurrent_requests.unwrap_or(col_specs.len()),
-    )
-    .await?
-    .fill_null(FillNullStrategy::Backward(None))?
-    .tail(Some(required_timesteps));
+async fn download_bytes_from_bucket(
+    client: &Client,
+    bucket: &str,
+    object: &str,
+) -> Result<Vec<u8>, anyhow::Error> {
+    let download_config = GetObjectRequest {
+        bucket: bucket.to_string(),
+        object: object.to_string(),
+        ..Default::default()
+    };
 
-    let most_recent_data: i64 = readings
-        .column("datetime")
-        .unwrap()
-        .datetime()
-        .unwrap()
-        .max()
-        .unwrap();
+    let download_range = Range::default();
 
-    let most_recent_data = DateTime::from_timestamp_millis(most_recent_data).unwrap();
+    let bytes = client
+        .download_object(&download_config, &download_range)
+        .await?;
 
-    let data = readings
-        .drop("datetime")?
-        .to_ndarray::<Float32Type>(IndexOrder::C)?;
+    Ok(bytes)
+}
 
-    Ok((data, most_recent_data))
+pub async fn load_model<'a>(
+    config: &LevelServiceConfig,
+) -> Result<(Session, InferenceConfig), anyhow::Error> {
+    let client_config = ClientConfig::default().with_auth().await?;
+    let client = Client::new(client_config);
+
+    debug!(
+        "Downloading model and config from bucket {}",
+        config.model_bucket
+    );
+
+    let (model_bytes, config_bytes) = tokio::try_join!(
+        download_bytes_from_bucket(&client, &config.model_bucket, &config.model_path),
+        download_bytes_from_bucket(&client, &config.model_bucket, &config.config_path)
+    )?;
+
+    let inference_config: InferenceConfig = serde_json::from_slice(&config_bytes)?;
+
+    debug!("Initialising onnx runtime session");
+
+    let model = ort::Session::builder()?
+        .with_intra_threads(config.model_inference_threads)?
+        .with_optimization_level(ort::GraphOptimizationLevel::Level3)?
+        .commit_from_memory(&model_bytes)?;
+
+    Ok((model, inference_config))
 }
 
 async fn run_model(
@@ -93,56 +114,42 @@ async fn run_model(
 pub async fn get_forecast(
     State(state): State<ServiceState>,
 ) -> Result<impl IntoResponse, LevelApiError> {
-    let (data, most_recent) = collect_data(
+    debug!("Fetching data to make forecast");
+
+    let df = get_latest_data(
         &state.http_client,
-        &state.config.model_input_columns,
-        state.config.required_timesteps,
+        &state.inference_config.input_columns,
+        state.data.clone(),
+        state.inference_config.prev_timesteps,
         state.config.max_concurrent_requests,
     )
     .await?;
 
+    debug!("dataframe for forecast: {:?}", df);
+
+    let most_recent_reading = df
+        .column("datetime")?
+        .datetime()?
+        .max()
+        .and_then(DateTime::from_timestamp_millis)
+        .expect("Failed to get most recent datetime");
+
+    let data = df
+        .drop("datetime")?
+        .fill_null(FillNullStrategy::Backward(None))?
+        .to_ndarray::<Float32Type>(IndexOrder::C)?;
+
+    debug!("Running forecast model");
+
     let forecast = run_model(
         state.forecast_model,
         data,
-        most_recent,
-        state.config.thresholds.clone(),
+        most_recent_reading,
+        state.inference_config.thresholds.clone(),
     )
     .await?;
 
+    debug!("Forecast complete");
+
     Ok(Json(forecast))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{super::fetch_data::build_client, *};
-
-    #[tokio::test]
-    async fn test_collect_data() {
-        let http_client = build_client();
-        let col_specs = vec![
-            ColSpec {
-                station_id: "025878".to_string(),
-                parameter: Parameter::Rainfall,
-            },
-            ColSpec {
-                station_id: "0240120".to_string(),
-                parameter: Parameter::Level,
-            },
-        ];
-
-        let required_timesteps = 10;
-
-        let max_concurrent_requests = None;
-
-        let (data, _most_recent_data) = collect_data(
-            &http_client,
-            &col_specs,
-            required_timesteps,
-            max_concurrent_requests,
-        )
-        .await
-        .unwrap();
-
-        assert_eq!(data.shape(), &[10, 2]);
-    }
 }
