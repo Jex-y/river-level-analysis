@@ -5,7 +5,6 @@ use super::{
 };
 use futures::{stream, StreamExt, TryStreamExt};
 use reqwest::{header, Client, Url};
-use tokio::task::JoinError;
 
 pub async fn get_station_readings(
     http_client: &Client,
@@ -29,10 +28,19 @@ pub async fn get_station_readings(
         ))
         .unwrap();
 
+    #[derive(serde::Serialize)]
+    struct QueryParams {
+        _sorted: bool,
+        _limit: usize,
+    }
+
     let response = http_client
         .get(url.clone())
         .header(header::ACCEPT, "text/csv")
-        .query(&[("_sorted", "true"), ("_limit", last_n.to_string().as_ref())])
+        .query(&QueryParams {
+            _sorted: true,
+            _limit: last_n,
+        })
         .send()
         .await?
         .error_for_status()?;

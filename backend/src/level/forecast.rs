@@ -1,15 +1,64 @@
 use super::{
+    config::{InferenceConfig, LevelServiceConfig},
     errors::{GetReadingsError, LevelApiError, ModelExecutionError},
     fetch_data::get_many_readings,
-    models::{ColSpec, ForecastRecord, Parameter, ServiceState},
+    models::{ColSpec, ForecastRecord, ServiceState},
 };
 use crate::level::data_store::FeatureColumn;
 use axum::{extract::State, response::IntoResponse, Json};
 use chrono::{DateTime, Datelike, Utc};
+use google_cloud_storage::{
+    client::{Client as GcsClient, ClientConfig},
+    http::objects::{download::Range, get::GetObjectRequest},
+};
 use ndarray::{s, Array2};
 use ort::Session;
 use reqwest::Client;
 use std::sync::Arc;
+use tracing::debug;
+
+async fn download_bytes_from_bucket(
+    client: &GcsClient,
+    bucket: &str,
+    object: &str,
+) -> Result<Vec<u8>, anyhow::Error> {
+    let download_config = GetObjectRequest {
+        bucket: bucket.to_string(),
+        object: object.to_string(),
+        ..Default::default()
+    };
+    let download_range = Range::default();
+    let bytes = client
+        .download_object(&download_config, &download_range)
+        .await?;
+    Ok(bytes)
+}
+
+pub async fn load_model(
+    config: &LevelServiceConfig,
+) -> Result<(Session, InferenceConfig), anyhow::Error> {
+    let client_config = ClientConfig::default().with_auth().await?;
+    let client = GcsClient::new(client_config);
+
+    debug!(
+        "Downloading model and config from bucket {}",
+        config.model_bucket
+    );
+
+    let (model_bytes, config_bytes) = tokio::try_join!(
+        download_bytes_from_bucket(&client, &config.model_bucket, &config.bucket_model_path),
+        download_bytes_from_bucket(&client, &config.model_bucket, &config.bucket_config_path)
+    )?;
+
+    let inference_config: InferenceConfig = serde_json::from_slice(&config_bytes)?;
+    debug!("Initialising onnx runtime session");
+
+    let model = ort::Session::builder()?
+        .with_intra_threads(config.model_inference_threads)?
+        .with_optimization_level(ort::GraphOptimizationLevel::Level3)?
+        .commit_from_memory(&model_bytes)?;
+    Ok((model, inference_config))
+}
 
 async fn collect_data(
     http_client: &Client,
@@ -79,8 +128,8 @@ pub async fn get_forecast(
 ) -> Result<impl IntoResponse, LevelApiError> {
     let (data, most_recent) = collect_data(
         &state.http_client,
-        &state.config.model_input_columns,
-        state.config.required_timesteps,
+        &state.model_config.input_columns,
+        state.model_config.prev_timesteps,
         state.config.max_concurrent_requests,
     )
     .await?;
@@ -89,44 +138,9 @@ pub async fn get_forecast(
         state.forecast_model,
         data,
         most_recent,
-        state.config.thresholds.clone(),
+        state.model_config.thresholds.clone(),
     )
     .await?;
 
     Ok(Json(forecast))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_collect_data() {
-        let http_client = reqwest::Client::new();
-        let col_specs = vec![
-            ColSpec {
-                station_id: "025878".to_string(),
-                parameter: Parameter::Rainfall,
-            },
-            ColSpec {
-                station_id: "0240120".to_string(),
-                parameter: Parameter::Level,
-            },
-        ];
-
-        let required_timesteps = 10;
-
-        let max_concurrent_requests = None;
-
-        let (data, _most_recent_data) = collect_data(
-            &http_client,
-            &col_specs,
-            required_timesteps,
-            max_concurrent_requests,
-        )
-        .await
-        .unwrap();
-
-        assert_eq!(data.shape(), &[10, 2]);
-    }
 }

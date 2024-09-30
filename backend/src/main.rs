@@ -2,14 +2,14 @@ use axum::{http::HeaderValue, Router};
 
 mod level;
 use http::Method;
-use level::{create_level_routes, LevelServiceConfigFile};
+use level::{create_level_routes, LevelServiceConfig};
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 #[derive(serde::Deserialize)]
 struct ConfigFile {
     #[serde(flatten)]
-    level_service: LevelServiceConfigFile,
+    level_service: LevelServiceConfig,
 
     /// Host to listen on.
     host: String,
@@ -26,7 +26,6 @@ async fn main() -> anyhow::Result<()> {
 
     let config: ConfigFile = config::Config::builder()
         .add_source(config::File::with_name("./config/default.json"))
-        .add_source(config::File::with_name("./model/inference_config.json"))
         .add_source(config::Environment::with_prefix("APP"))
         .build()
         .expect("Failed to build config")
@@ -36,7 +35,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .nest(
             "/api/level",
-            create_level_routes(config.level_service.try_into()?)?,
+            create_level_routes(config.level_service).await?,
         )
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
         .layer(

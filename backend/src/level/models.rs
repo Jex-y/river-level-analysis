@@ -1,34 +1,15 @@
-use super::config::LevelServiceConfig;
+use super::config::{InferenceConfig, LevelServiceConfig};
 use axum::extract::FromRef;
 use chrono::{DateTime, Utc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{fmt::Display, str::FromStr, sync::Arc};
 
 #[derive(Debug, Clone, FromRef)]
 pub struct ServiceState {
     pub forecast_model: Arc<ort::Session>,
+    pub model_config: InferenceConfig,
     pub http_client: reqwest::Client,
     pub config: LevelServiceConfig,
-}
-
-impl TryFrom<LevelServiceConfig> for ServiceState {
-    type Error = anyhow::Error;
-
-    fn try_from(config: LevelServiceConfig) -> anyhow::Result<Self> {
-        let http_client = reqwest::Client::new();
-
-        let model = ort::Session::builder()?
-            .with_intra_threads(config.model_inference_threads.unwrap_or(num_cpus::get()))?
-            .with_optimization_level(ort::GraphOptimizationLevel::Level3)?
-            .with_parallel_execution(true)?
-            .commit_from_file(&config.model_onnx_path)?;
-
-        Ok(Self {
-            forecast_model: Arc::new(model),
-            http_client,
-            config,
-        })
-    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -82,7 +63,8 @@ impl ObservationRecord {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Parameter {
     Level,
     Rainfall,
@@ -109,7 +91,7 @@ impl FromStr for Parameter {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct ColSpec {
     pub station_id: String,
     pub parameter: Parameter,

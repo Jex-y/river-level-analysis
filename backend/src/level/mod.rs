@@ -7,11 +7,12 @@ mod models;
 mod observed;
 
 use axum::{extract::State, http::header, middleware, response::Response, routing::get, Router};
-pub use config::{LevelServiceConfig, LevelServiceConfigFile};
+pub use config::LevelServiceConfig;
+use forecast::load_model;
+pub use models::ColSpec;
 use models::ServiceState;
-pub use models::{ColSpec, Parameter};
 
-pub fn create_level_routes(config: LevelServiceConfig) -> anyhow::Result<axum::Router<()>> {
+pub async fn create_level_routes(config: LevelServiceConfig) -> anyhow::Result<axum::Router<()>> {
     async fn add_cache_control<B>(
         State(config): State<LevelServiceConfig>,
         mut response: Response<B>,
@@ -25,7 +26,14 @@ pub fn create_level_routes(config: LevelServiceConfig) -> anyhow::Result<axum::R
         response
     }
 
-    let state = ServiceState::try_from(config)?;
+    let (forecast_model, model_config) = load_model(&config).await?;
+
+    let state = ServiceState {
+        forecast_model: forecast_model.into(),
+        http_client: reqwest::Client::new(),
+        config: config.clone(),
+        model_config,
+    };
 
     Ok(Router::new()
         .route("/forecast", get(forecast::get_forecast))

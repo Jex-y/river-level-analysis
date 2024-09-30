@@ -27,7 +27,7 @@ impl FeatureColumn {
                 panic!("FeatureColumn must have at least one feature");
             }
 
-            if features.is_sorted_by(|a: &Feature, b: &Feature| a.datetime > b.datetime) {
+            if features.is_sorted_by(|a: &Feature, b: &Feature| a.datetime < b.datetime) {
                 panic!("Features must be sorted by datetime");
             }
         }
