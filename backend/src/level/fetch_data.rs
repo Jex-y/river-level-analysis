@@ -3,8 +3,9 @@ use super::{
     errors::GetReadingsError,
     models::{ColSpec, Parameter},
 };
-use futures::{stream, StreamExt};
+use futures::{stream, StreamExt, TryStreamExt};
 use reqwest::{header, Client, Url};
+use tokio::task::JoinError;
 
 pub async fn get_station_readings(
     http_client: &Client,
@@ -54,37 +55,21 @@ pub async fn get_many_readings(
     col_specs: &[ColSpec],
     last_n: usize,
     max_concurrent_requests: usize,
-) -> Result<(), GetReadingsError> {
-    todo!()
-    // let task_results: Vec<Result<_, GetReadingsError>> =
-    // stream::iter(col_specs.iter().cloned())     .map(|col_spec: ColSpec|
-    // {         let http_client = http_client.clone();
-    //         let col_name = format!("{}_{}", col_spec.station_id,
-    // col_spec.parameter);         let col_spec: ColSpec =
-    // col_spec.clone();         tokio::task::spawn(async move {
-    //             Ok(get_station_readings(&http_client, col_spec, last_n)
-    //                 .await?
-    //                 .rename("value", col_name.into())?
-    //                 .to_owned())
-    //         })
-    //     })
-    //     .buffered(max_concurrent_requests)
-    //     .try_collect()
-    //     .await?;
+) -> Result<Vec<FeatureColumn>, GetReadingsError> {
+    let futures = col_specs.iter().cloned().map(|col_spec: ColSpec| {
+        let http_client = http_client.clone();
+        let col_spec = col_spec.clone();
+        tokio::task::spawn(
+            async move { get_station_readings(&http_client, col_spec, last_n).await },
+        )
+    });
 
-    // Ok(task_results
-    //     .into_iter()
-    //     .collect::<Result<Vec<DataFrame>, GetReadingsError>>()?
-    //     .into_iter()
-    //     .map(|df: DataFrame| df.lazy())
-    //     .reduce(|df1: LazyFrame, df2: LazyFrame| {
-    //         df1.join(
-    //             df2,
-    //             [col("datetime")],
-    //             [col("datetime")],
-    //             JoinArgs::new(JoinType::Left),
-    //         )
-    //     })
-    //     .unwrap()
-    //     .collect()?)
+    let results = stream::iter(futures)
+        .buffered(max_concurrent_requests)
+        .try_collect::<Vec<_>>()
+        .await?
+        .into_iter()
+        .collect::<Result<Vec<FeatureColumn>, GetReadingsError>>()?;
+
+    Ok(results)
 }

@@ -3,6 +3,7 @@ use super::{
     fetch_data::get_many_readings,
     models::{ColSpec, ForecastRecord, Parameter, ServiceState},
 };
+use crate::level::data_store::FeatureColumn;
 use axum::{extract::State, response::IntoResponse, Json};
 use chrono::{DateTime, Datelike, Utc};
 use ndarray::{s, Array2};
@@ -16,34 +17,15 @@ async fn collect_data(
     required_timesteps: usize,
     max_concurrent_requests: Option<usize>,
 ) -> Result<(Array2<f32>, DateTime<Utc>), GetReadingsError> {
-    todo!();
+    let readings = get_many_readings(
+        http_client,
+        col_specs,
+        required_timesteps,
+        max_concurrent_requests.unwrap_or(col_specs.len()),
+    )
+    .await?;
 
-    // let readings = get_many_readings(
-    //     http_client,
-    //     col_specs,
-    //     required_timesteps,
-    //     max_concurrent_requests.unwrap_or(col_specs.len()),
-    // )
-    // .await?
-    // .fill_null(FillNullStrategy::Backward(None))?
-    // .tail(Some(required_timesteps));
-
-    // let most_recent_data: i64 = readings
-    //     .column("datetime")
-    //     .unwrap()
-    //     .datetime()
-    //     .unwrap()
-    //     .max()
-    //     .unwrap();
-
-    // let most_recent_data =
-    // DateTime::from_timestamp_millis(most_recent_data).unwrap();
-
-    // let data = readings
-    //     .drop("datetime")?
-    //     .to_ndarray::<Float32Type>(IndexOrder::C)?;
-
-    // Ok((data, most_recent_data))
+    Ok(FeatureColumn::to_array(&readings, required_timesteps))
 }
 
 async fn run_model(
