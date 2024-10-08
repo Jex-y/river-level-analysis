@@ -14,13 +14,13 @@ http_client = httpx.AsyncClient()
 
 
 def get_api_key():
-    from .utils import get_dotenv
+    # from .utils import get_dotenv
 
-    return get_dotenv()["TOMORROW_API_KEY"]
+    # return get_dotenv()["TOMORROW_API_KEY"]
 
-    # from firebase_functions.params import StringParam
+    from firebase_functions.params import StringParam
 
-    # return StringParam('TOMORROW_API_KEY').value
+    return StringParam("TOMORROW_API_KEY").value
 
 
 async def get_weather_forecast(get_api_key):
