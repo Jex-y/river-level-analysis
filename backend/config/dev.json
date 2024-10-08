@@ -1,0 +1,17 @@
+{
+    "server": {
+        "host": "127.0.0.1",
+        "port": 8080,
+        "cache_duration": 5
+    },
+    "level_service": {
+        "model_bucket": "durham-river-level-models",
+        "bucket_model_path": "dev/model.onnx",
+        "bucket_config_path": "dev/config.json",
+        "target_station_id": "025878",
+        "target_parameter": "level"
+    },
+    "leak_service": {
+        "mongodb_uri": "mongodb+srv://sewage-leak-function:aI3YYP9fIbQyuEKf@riverdata.mtspjxg.mongodb.net/?retryWrites=true&w=majority&appName=RiverData"
+    }
+}
