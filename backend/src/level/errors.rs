@@ -32,9 +32,6 @@ pub enum LevelApiError {
 
     #[error("Failed to execute model: {0}")]
     ModelExecution(#[from] ModelExecutionError),
-
-    #[error("Missing data: {0}")]
-    MissingData(String),
 }
 
 impl IntoResponse for LevelApiError {

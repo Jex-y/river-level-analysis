@@ -1,4 +1,7 @@
-use super::config::{InferenceConfig, LevelServiceConfig};
+use super::{
+    config::{InferenceConfig, LevelServiceConfig},
+    data_store::Feature,
+};
 use axum::extract::FromRef;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -57,9 +60,12 @@ pub struct ObservationRecord {
     value: f32,
 }
 
-impl ObservationRecord {
-    pub fn new(timestamp: DateTime<Utc>, value: f32) -> Self {
-        Self { timestamp, value }
+impl From<&Feature> for ObservationRecord {
+    fn from(feature: &Feature) -> Self {
+        Self {
+            timestamp: feature.datetime,
+            value: feature.value,
+        }
     }
 }
 

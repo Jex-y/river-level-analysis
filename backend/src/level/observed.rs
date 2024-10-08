@@ -29,25 +29,10 @@ pub async fn get_observed(
     )
     .await?;
 
-    todo!();
-
-    // let records: Vec<ObservationRecord> = data
-    //     .column("datetime")?
-    //     .datetime()?
-    //     .into_iter()
-    //     .zip(data.column("value")?.f32()?.into_iter())
-    //     .into_iter()
-    //     .map(|(datetime, value)| match (datetime, value) {
-    //         (Some(datetime), Some(value)) => Ok(ObservationRecord::new(
-    //             DateTime::from_timestamp_millis(datetime).expect("Invalid
-    // timestamp"),             value,
-    //         )),
-    //         _ => Err(LevelApiError::MissingData(format!(
-    //             "Observation record {:?} is missing either datetime or
-    // value",             (datetime, value)
-    //         ))),
-    //     })
-    //     .collect::<Result<Vec<ObservationRecord>, LevelApiError>>()?;
-
-    // Ok(Json(records))
+    Ok(Json(
+        data.features
+            .iter()
+            .map(ObservationRecord::from)
+            .collect::<Vec<ObservationRecord>>(),
+    ))
 }

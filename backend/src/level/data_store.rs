@@ -6,17 +6,17 @@ type FrequencySeconds = u32;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct Feature {
-    value: f32,
+    pub value: f32,
 
     #[serde(alias = "dateTime")]
-    datetime: DateTime<Utc>,
+    pub datetime: DateTime<Utc>,
 }
 
 #[derive(Debug)]
 pub struct FeatureColumn {
-    features: Vec<Feature>,
-    name: String,
-    frequency: FrequencySeconds,
+    pub features: Vec<Feature>,
+    pub name: String,
+    pub frequency: FrequencySeconds,
 }
 
 impl FeatureColumn {
