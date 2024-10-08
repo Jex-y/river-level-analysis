@@ -36,6 +36,8 @@ pub struct OutflowEvent {
     // )]
     // last_updated: DateTime<Utc>,
     event_duration_mins: u64,
+
+    event_type: EventType,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]

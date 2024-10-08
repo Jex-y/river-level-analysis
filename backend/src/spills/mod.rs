@@ -18,7 +18,7 @@ mod models;
 pub use config::SpillServiceConfig;
 use errors::SpillServiceError;
 use models::StormOutflow;
-use tracing::info;
+use mongodb::bson::DateTime as MongoDateTime;
 
 #[derive(Clone)]
 struct ServiceState {
@@ -75,13 +75,13 @@ async fn get_spills_from_db(
                     }
                 }
             },
-            // doc! {
-            //     "$match": doc! {
-            //         "events.event_end": {
-            //         "$gte": since.to_rfc3339()
-            //         }
-            //     }
-            // },
+            doc! {
+                "$match": doc! {
+                    "events.event_end": {
+                    "$gte": MongoDateTime::from_chrono(since)
+                    }
+                }
+            },
         ])
         .await?;
 
