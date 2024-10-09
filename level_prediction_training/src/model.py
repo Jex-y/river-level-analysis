@@ -87,13 +87,14 @@ class BaseTimeSeriesModel(LightningModule):
         self.n_context_features = len(input_column_names)
         self.x_column_names = input_column_names
 
-        self.quantiles = torch.tensor(
-            config.quantiles, dtype=torch.float32, device=self.device
+        self.register_buffer(
+                "quantiles",
+                torch.tensor(config.quantiles, dtype=torch.float32)
         )
 
         self.register_buffer(
             "thresholds",
-            torch.tensor(config.thresholds, dtype=torch.float32, device=self.device),
+            torch.tensor(config.thresholds, dtype=torch.float32),
         )
 
     def forward(
