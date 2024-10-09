@@ -6,8 +6,23 @@ from einops import reduce
 from pytorch_lightning import LightningModule
 from torch import nn
 from torch.nn.functional import binary_cross_entropy_with_logits
+import torch.nn.functional as F
 
 from .config import ActivationFunction, Config, Norm
+
+
+def smooth_pinball_loss(
+    pred: torch.Tensor,
+    target: torch.Tensor,
+    quantiles: torch.Tensor,
+    alpha: float = 0.001,
+):
+    error = target - pred
+    q_error = quantiles * error
+    beta = 1 / alpha
+    soft_error = F.softplus(-error, beta)
+    losses = q_error + soft_error
+    return losses.mean(dim=1).sum()
 
 
 def add_prefix(prefix, dictionary):
@@ -62,8 +77,8 @@ def get_dropout_layer(config: Config):
 
 class BaseTimeSeriesModel(LightningModule):
     # Buffers
-    level_cols: torch.BoolTensor
-    rainfall_cols: torch.BoolTensor
+    thresholds: torch.Tensor
+    quantiles: torch.Tensor
 
     def __init__(self, input_column_names: list[str], config: Config):
         super().__init__()
@@ -72,18 +87,23 @@ class BaseTimeSeriesModel(LightningModule):
         self.n_context_features = len(input_column_names)
         self.x_column_names = input_column_names
 
-        self.target_feature_index = list(input_column_names).index(config.target_col)
+        self.quantiles = torch.tensor(config.quantiles, dtype=torch.float32)
+
+        self.register_buffer(
+            "thresholds",
+            torch.tensor(config.thresholds, dtype=torch.float32),
+        )
 
     def forward(
         self,
-        features_with_time_dim: torch.FloatTensor,
-        features_without_time_dim: torch.FloatTensor,
-    ) -> torch.FloatTensor:
+        features_with_time_dim: torch.Tensor,
+        features_without_time_dim: torch.Tensor,
+    ) -> torch.Tensor:
         """Forward pass of the model.
 
         Args:
-            features_with_time (torch.FloatTensor): Shape (batch_size, context_length, -1)
-            features_without_time (torch.FloatTensor): Shape (batch_size, -1)
+            features_with_time (torch.Tensor): Shape (batch_size, context_length, -1)
+            features_without_time (torch.Tensor): Shape (batch_size, -1)
         """
         pass
 
@@ -104,14 +124,16 @@ class BaseTimeSeriesModel(LightningModule):
 
     @property
     def num_output_features(self):
-        return (2 + len(self.config.thresholds)) * self.config.prediction_length
+        return (
+            1 + len(self.config.quantiles) + len(self.config.thresholds)
+        ) * self.config.prediction_length
 
     def forecast(
         self,
         time: torch.LongTensor,
-        context: torch.FloatTensor,
+        context: torch.Tensor,
         return_raw: bool = False,
-    ) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         batch_size = context.shape[0]
 
         datetime_features = self.calculate_timestamp_features(time)
@@ -124,32 +146,35 @@ class BaseTimeSeriesModel(LightningModule):
         # Shape should be (batch_size, context_length, num_features)
 
         # mean, quantiles, thresholds_logits
-        last_dim_splits = [1, 1, len(self.config.thresholds)]
+        last_dim_splits = [1, len(self.config.quantiles), len(self.config.thresholds)]
 
         output = self.forward(
             context,
             torch.cat([datetime_features, rolling_features], dim=-1),
         ).view(batch_size, self.config.prediction_length, sum(last_dim_splits))
 
-        pred_mean, pred_log_variance, pred_thresholds_logits = torch.split(
+        pred_mean, pred_quantiles, pred_thresholds_logits = torch.split(
             output,
             last_dim_splits,
             dim=-1,
         )
 
+        pred_quantiles = pred_quantiles + pred_mean
+
         if return_raw:
             return (
                 pred_mean,
-                pred_log_variance,
+                pred_quantiles,
                 pred_thresholds_logits,
             )
 
-        # To deal with variance and quantile transform, could find +/-1std, +/-2std, ect, inverse quantile transform these and return them as well.
-        pred_stddev = (0.5 * pred_log_variance).exp()
+        return (
+            pred_mean,
+            pred_quantiles,
+            pred_thresholds_logits.sigmoid(),
+        )
 
-        return pred_mean, pred_stddev, pred_thresholds_logits.sigmoid()
-
-    def calculate_timestamp_features(self, time: torch.LongTensor) -> torch.FloatTensor:
+    def calculate_timestamp_features(self, time: torch.LongTensor) -> torch.Tensor:
         # time is expected to be of shape (batch_size, 2)
 
         day_of_year, year = time.unbind(dim=-1)
@@ -164,8 +189,8 @@ class BaseTimeSeriesModel(LightningModule):
 
     def calculate_rolling_features(
         self,
-        features_to_roll: torch.FloatTensor,
-    ) -> torch.FloatTensor:
+        features_to_roll: torch.Tensor,
+    ) -> torch.Tensor:
         # features_to_roll is expected to be of shape (batch_size, n_timesteps, n_features)
         # We want to output a tensor of shape (batch_size, len(rolling_windows), n_features)
         # Calculates only the last window of each rolling window as required for inference.
@@ -180,79 +205,50 @@ class BaseTimeSeriesModel(LightningModule):
 
     def calculate_metrics(
         self,
-        batch: tuple[torch.LongTensor, torch.FloatTensor, torch.FloatTensor],
+        batch: tuple[torch.LongTensor, torch.Tensor, torch.Tensor],
         return_metrics: bool = False,
     ):
         x_datetime, x, y_true = batch
         (
             pred_mean,
-            pred_log_variance,
+            pred_quantiles,
             pred_thresholds_logits,
         ) = self.forecast(x_datetime, x, return_raw=True)
         # return logits to improve numerical stability
 
-        thresholds = torch.tensor(self.config.thresholds, device=y_true.device)
-
-        # Mean Absolute Error loss
-
-        # NNL Loss
-        squared_error = (pred_mean - y_true) ** 2
-
-        nnl_loss = reduce(
-            0.5
-            * (
-                pred_log_variance
-                + (squared_error / pred_log_variance.exp().clamp(min=1e-6))
-                + math.log(2 * math.pi)
-            ),
-            "bs np 1 -> np",
-            "mean",
+        mse_loss = torch.square(pred_mean - y_true).mean()
+        quantile_loss = smooth_pinball_loss(
+            pred_quantiles,
+            y_true,
+            self.quantiles,
         )
 
         # Threshold Loss
+        y_true_over_threshold = (y_true > self.thresholds).float()
+        threshold_loss = binary_cross_entropy_with_logits(
+            pred_thresholds_logits, y_true_over_threshold
+        ).mean()
 
-        y_true_over_threshold = (y_true > thresholds).float()
-
-        threshold_loss = reduce(
-            binary_cross_entropy_with_logits(
-                pred_thresholds_logits,
-                y_true_over_threshold,
-                reduction="none",
-            ),
-            "bs np nt -> np nt",
-            "mean",
-        )
-
-        total_loss = (nnl_loss.mean() * self.config.nnl_loss_coefficient) + (
-            threshold_loss.mean() * self.config.threshold_loss_coefficient
-        )
+        total_loss = mse_loss + quantile_loss + threshold_loss
 
         if not return_metrics:
             return total_loss
 
-        pred_stddev = (0.5 * pred_log_variance).exp()
-
         return total_loss, {
             "total_loss": total_loss,
-            "total_nnl_loss": nnl_loss.mean(),
-            "total_threshold_loss": threshold_loss.mean(),
-            "mse_transformed": squared_error.mean(),
-            "mse_true_value": torch.square(pred_mean - y_true).mean(),
+            "mse_loss": mse_loss,
+            "threshold_loss": threshold_loss,
+            "quantile_loss": quantile_loss,
             "threshold_accuracy": (pred_thresholds_logits.sigmoid() > 0.5)
             .eq(y_true_over_threshold)
             .float()
             .mean(),
             **{
-                f"{stdevs} stdev coverage": (
-                    y_true > (pred_mean - stdevs * pred_stddev)
-                )
+                f"{q:.3f} quantile coverage": (y_true > pred_quantiles[..., i : i + 1])
                 .float()
                 .mean()
-                for stdevs in (1, 2)
+                for i, q in enumerate(self.config.quantiles)
             },
-            # "nnl_loss": nnl_loss,
-            # "threshold_loss": threshold_loss,
-            # "threshold_accuracy": threshold_accuracy,
         }
 
     def training_step(self, batch, _batch_idx):

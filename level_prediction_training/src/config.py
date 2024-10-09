@@ -3,6 +3,7 @@ from pathlib import Path
 from enum import StrEnum
 from typing import Optional
 
+
 class ActivationFunction(StrEnum):
     RELU = "relu"
     GELU = "gelu"
@@ -15,6 +16,7 @@ class Norm(StrEnum):
     BATCH = "batch"
     LAYER = "layer"
     NONE = "none"
+
 
 @dataclass
 class Config:
@@ -39,6 +41,8 @@ class Config:
     "Thresholds to predict over/under probability"
 
     rolling_windows: tuple[int, ...] = (7 * 4 * 24, 30 * 4 * 24)
+
+    quantiles: tuple[float, ...] = (0.1, 0.9)
 
     threshold_loss_coefficient: float = 1.0
     nnl_loss_coefficient: float = 1.0
