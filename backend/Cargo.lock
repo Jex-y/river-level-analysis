@@ -172,6 +172,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "bson",
  "chrono",
  "config",
  "csv",
@@ -278,6 +279,7 @@ dependencies = [
  "ahash",
  "base64 0.13.1",
  "bitvec",
+ "chrono",
  "hex",
  "indexmap 2.5.0",
  "js-sys",
