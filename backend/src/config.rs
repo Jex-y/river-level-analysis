@@ -1,5 +1,6 @@
 use crate::{level::LevelServiceConfig, spills::SpillServiceConfig};
 use std::str::FromStr;
+use tracing::info;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Env {
@@ -20,20 +21,23 @@ impl FromStr for Env {
 }
 
 fn get_env() -> Env {
-    std::env::var("APP_ENV")
+    let env: Env = std::env::var("APP_ENV")
         .unwrap_or_else(|_| "dev".to_string())
         .parse()
-        .expect("Failed to parse APP_ENV")
+        .expect("Failed to parse APP_ENV");
+
+    info!("App env: {:?}", env);
+    env
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct HttpConfig {
     pub host: String,
     pub port: u16,
     pub cache_duration_sec: u32,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Debug)]
 pub struct Config {
     pub level_service: LevelServiceConfig,
 
@@ -42,22 +46,17 @@ pub struct Config {
     pub http: HttpConfig,
 }
 
-pub fn load_config() -> Config {
-    let env = get_env();
-
-    let mut config_builder = config::Config::builder()
+pub fn load_config() -> anyhow::Result<Config> {
+    Ok(config::Config::builder()
         .add_source(config::File::with_name("./config/default.json"))
-        .add_source(config::Environment::with_prefix("APP"));
-
-    if env == Env::Dev {
-        config_builder = config_builder.add_source(config::File::with_name("./config/dev.json"));
-    }
-
-    let config: Config = config_builder
-        .build()
-        .expect("Failed to build config")
-        .try_deserialize()
-        .expect("Failed to deserialize config");
-
-    config
+        .add_source(
+            config::File::with_name(match get_env() {
+                Env::Dev => "./config/dev.json",
+                Env::Prod => "./config/prod.json",
+            })
+            .required(false),
+        )
+        .add_source(config::Environment::with_prefix("APP"))
+        .build()?
+        .try_deserialize()?)
 }

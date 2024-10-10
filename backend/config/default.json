@@ -1,5 +1,17 @@
 {
-  "host": "127.0.0.1",
-  "port": 8080,
-  "cache_ttl": 300
+  "http": {
+    "host": "127.0.0.1",
+    "port": 8080,
+    "cache_duration_sec": 5
+  },
+  "level_service": {
+    "model_bucket": "durham-river-level-models",
+    "bucket_model_path": "wise-snow-946/model.onnx",
+    "bucket_config_path": "wise-snow-946/config.json",
+    "target_station_id": "0240120",
+    "target_parameter": "level"
+  },
+  "spill_service": {
+    "mongodb_uri": "mongodb+srv://sewage-leak-function:aI3YYP9fIbQyuEKf@riverdata.mtspjxg.mongodb.net/?retryWrites=true&w=majority&appName=RiverData"
+  }
 }
