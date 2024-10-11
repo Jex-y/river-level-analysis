@@ -11,18 +11,16 @@ import torch.nn.functional as F
 from .config import ActivationFunction, Config, Norm
 
 
-def smooth_pinball_loss(
+def pinball_loss(
     pred: torch.Tensor,
     target: torch.Tensor,
     quantiles: torch.Tensor,
-    alpha: float = 0.001,
 ):
     error = target - pred
-    q_error = quantiles * error
-    beta = 1 / alpha
-    soft_error = F.softplus(-error, beta)
-    losses = q_error + soft_error
-    return losses.mean(dim=1).sum()
+    upper = quantiles * error
+    lower = (quantiles - 1) * error
+
+    return torch.max(lower, upper).mean()
 
 
 def add_prefix(prefix, dictionary):
@@ -220,7 +218,7 @@ class BaseTimeSeriesModel(LightningModule):
         # return logits to improve numerical stability
 
         mse_loss = torch.square(pred_mean - y_true).mean()
-        quantile_loss = smooth_pinball_loss(
+        quantile_loss = pinball_loss(
             pred_quantiles,
             y_true,
             self.quantiles,
@@ -247,7 +245,7 @@ class BaseTimeSeriesModel(LightningModule):
             .float()
             .mean(),
             **{
-                f"{q:.3f} quantile coverage": (y_true > pred_quantiles[..., i : i + 1])
+                f"{q:.0%} quantile coverage": (y_true < pred_quantiles[..., i : i + 1])
                 .float()
                 .mean()
                 for i, q in enumerate(self.config.quantiles)

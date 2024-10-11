@@ -25,10 +25,10 @@ class Config:
     seed: Optional[int] = None
     "Seed for reproducibility. By default, a random seed is used."
 
-    lr: float = 0.005
+    lr: float = 0.001
     "Learning rate for the optimizer"
 
-    train_epochs: int = 25
+    train_epochs: int = 100
     "Number of epochs to train the model"
 
     batch_size: int = 1024
@@ -40,31 +40,28 @@ class Config:
     thresholds: tuple[float, ...] = (0.675,)
     "Thresholds to predict over/under probability"
 
-    rolling_windows: tuple[int, ...] = (7 * 4 * 24, 30 * 4 * 24)
+    rolling_windows: tuple[int, ...] = (7 * 4 * 24, 28 * 4 * 24)
 
-    quantiles: tuple[float, ...] = (0.1, 0.9)
-
-    threshold_loss_coefficient: float = 1.0
-    nnl_loss_coefficient: float = 1.0
+    quantiles: tuple[float, ...] = (0.05, 0.1, 0.9, 0.95)
 
     target_col: str = "Durham New Elvet Bridge - level"
 
-    context_length: int = 4 * 8
+    context_length: int = 4 * 12
     prediction_length: int = 4 * 12
 
-    activation_function: ActivationFunction = ActivationFunction.GELU
+    activation_function: ActivationFunction = ActivationFunction.SWISH
 
     mlp_norm: Norm = Norm.BATCH
-    num_mlp_blocks: int = 2
-    mlp_hidden_size: int = 32
+    num_mlp_blocks: int = 4
+    mlp_hidden_size: int = 64
 
-    num_conv_blocks: int = 4
+    num_conv_blocks: int = 3
     conv_kernel_size: int = 3
-    conv_hidden_size: int = 64
+    conv_hidden_size: int = 32
     conv_norm: Norm = Norm.BATCH
     skip_connection: bool = True
 
-    dropout: float = 0.2
+    dropout: float = 0.25
     weight_decay: float = 0.01
 
     model_save_dir: Path = Path("./models")

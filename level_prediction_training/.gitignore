@@ -1,4 +1,5 @@
 outputs/
+slurm-*.out
 wandb/
 models/
 *.log

@@ -90,7 +90,7 @@ def save_model(
 def train(config: Optional[Config] = None):
     setup_logging()
     log = logging.getLogger("training")
-
+    torch.set_float32_matmul_precision('medium')
     if config is None:
         seed = random.randint(0, 2**16 - 1)
         wandb.init(project="river-level-forecasting", config={"seed": seed})
