@@ -28,7 +28,7 @@ impl FeatureColumn {
             }
 
             if features.is_sorted_by(|a: &Feature, b: &Feature| a.datetime < b.datetime) {
-                panic!("Features must be sorted by datetime");
+                panic!("Features must be sorted by datetime, starting with the oldest feature");
             }
         }
 
@@ -41,13 +41,13 @@ impl FeatureColumn {
 
     pub fn oldest(&self) -> &Feature {
         self.features
-            .first()
+            .last()
             .expect("FeatureColumn must have at least one feature")
     }
 
     pub fn newest(&self) -> &Feature {
         self.features
-            .last()
+            .first()
             .expect("FeatureColumn must have at least one feature")
     }
 

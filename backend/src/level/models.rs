@@ -31,10 +31,27 @@ impl From<(&f32, &f32)> for ThrehsoldProbability {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct Quantile {
+    /// The value at which we expect quantile * 100 % of the data to be below
+    value: f32,
+    /// The quantile that the value refers to
+    quantile: f32,
+}
+
+impl From<(&f32, &f32)> for Quantile {
+    fn from((value, quantile): (&f32, &f32)) -> Self {
+        Self {
+            value: *value,
+            quantile: *quantile,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct ForecastRecord {
     timestamp: DateTime<Utc>,
     mean: f32,
-    std: f32,
+    quantiles: Vec<Quantile>,
     thresholds: Vec<ThrehsoldProbability>,
 }
 
@@ -42,13 +59,13 @@ impl ForecastRecord {
     pub fn new(
         timestamp: DateTime<Utc>,
         mean: f32,
-        std: f32,
+        quantiles: Vec<Quantile>,
         thresholds: Vec<ThrehsoldProbability>,
     ) -> Self {
         Self {
             timestamp,
             mean,
-            std,
+            quantiles,
             thresholds,
         }
     }

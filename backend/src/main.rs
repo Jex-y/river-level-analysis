@@ -15,7 +15,7 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt().init();
 
-    let config = load_config();
+    let config = load_config()?;
 
     let app = Router::new()
         .nest(

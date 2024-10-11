@@ -5,6 +5,7 @@ use super::{
 };
 use futures::{stream, StreamExt, TryStreamExt};
 use reqwest::{header, Client, Url};
+use tracing::info;
 
 pub async fn get_station_readings(
     http_client: &Client,

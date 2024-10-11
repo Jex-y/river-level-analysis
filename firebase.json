@@ -12,35 +12,15 @@
         "*.local",
         "pytest.ini"
       ]
-    },
-    {
-      "source": "level_prediction_inference",
-      "codebase": "level_prediction",
-      "runtime": "python311",
-      "ignore": [
-        "venv",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local",
-        ".cache"
-      ]
-    },
-    {
-      "source": "sewage_leak",
-      "codebase": "sewage_leak",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
-      ]
     }
   ],
   "hosting": {
     "public": "dashboard-v2/out",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
       {
         "source": "**",
