@@ -129,6 +129,10 @@ class BaseTimeSeriesModel(LightningModule):
             1 + len(self.config.quantiles) + len(self.config.thresholds)
         ) * self.config.prediction_length
 
+    @property
+    def num_output_features_per_ts(self):
+        return 1 + len(self.config.quantiles) + len(self.config.thresholds)
+
     def forecast(
         self,
         time: torch.LongTensor,
@@ -376,6 +380,12 @@ class TimeSeriesModel(BaseTimeSeriesModel):
             ],
         )
 
+        self.last_observation_projection = nn.Linear(
+                self.num_time_features,
+                self.num_output_features,
+                bias=False # Handeled by the last MLP layer
+        )
+
     def forward(
         self, features_with_time: torch.Tensor, features_without_time: torch.Tensor
     ):
@@ -393,4 +403,6 @@ class TimeSeriesModel(BaseTimeSeriesModel):
                 [features_with_time_after_conv.flatten(1), features_without_time],
                 dim=-1,
             )
+        ) + self.last_observation_projection(
+                features_with_time[:,-1],
         )
