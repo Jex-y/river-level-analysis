@@ -29,6 +29,8 @@ export function useChartData() {
                                                 timestamp: last_observed.timestamp,
                                                 mean: forecastLevelData[0].mean,
                                                 // std: 0,
+                                                quantiles: [],
+                                                thresholds: [],
                                         },
                                         ...forecastLevelData,
                                 ],
