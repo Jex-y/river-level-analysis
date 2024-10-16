@@ -6,8 +6,9 @@ export default function manifest(): MetadataRoute.Manifest {
                 short_name: APP_NAME_SHORT,
                 description: APP_DESCRIPTION,
                 icons: ICONS,
-                theme_color: '#000000',
-                background_color: '#ffffff',
+                start_url: '/',
+                theme_color: '#247EB9',
+                background_color: '#0B0D0E',
                 display: 'standalone',
         };
 }

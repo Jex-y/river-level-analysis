@@ -47,6 +47,7 @@ export const metadata: Metadata = {
                 icon: [ICON_SVG, ...ICONS_PNG].map(map_icon),
                 apple: [APPLE_ICON, ...ICONS_PNG].map(map_icon),
         },
+        manifest: '/manifest.webmanifest',
 };
 
 export default function RootLayout({
