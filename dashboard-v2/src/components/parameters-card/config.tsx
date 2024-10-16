@@ -157,9 +157,11 @@ export const parameterInfo: Record<keyof Parameters, ParameterInfo> = {
         riverLevel: {
                 label: 'River Level',
                 icon: Waves,
-                formatFn: (value: number) => <ValueWithUnits value={value} unit="m" />,
+                formatFn: (value: number) => (
+                        <ValueWithUnits value={value} unit="m" fractionDigits={2} />
+                ),
                 statusFn: (value: number) => {
-                        if (value < 0.65) {
+                        if (value < 0.4) {
                                 return Status.Good;
                         }
 
