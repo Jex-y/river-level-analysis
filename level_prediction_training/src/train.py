@@ -58,8 +58,8 @@ def save_model(
     if not model_dir.exists():
         os.makedirs(model_dir)
 
-    model_file_path = model_dir / "model_torchscript.onnx"
-    inference_config_file_path = model_dir / "inference_config.json"
+    model_file_path = model_dir / "model.onnx"
+    inference_config_file_path = model_dir / "config.json"
 
     # Save model as ONNX
 
@@ -81,6 +81,7 @@ def save_model(
             pl.col("label"),
         ).to_dicts(),
         thresholds=list(config.thresholds),
+        quantiles=list(config.quantiles),
     )
 
     with open(inference_config_file_path, "w") as f:
