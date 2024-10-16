@@ -8,7 +8,8 @@
     "lint": "biome lint ./src",
     "lint:fix": "biome lint --write ./src",
     "install-ci": "bun install --frozen-lockfile",
-    "generate-icons": "./generate-icons.sh ./logo-src.svg"
+    "generate-icons": "./generate-icons.sh ./logo-src.svg",
+    "deploy": "bun run build && firebase deploy --only hosting"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.1",
