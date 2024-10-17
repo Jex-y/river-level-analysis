@@ -6,8 +6,8 @@
   },
   "level_service": {
     "model_bucket": "durham-river-level-models",
-    "bucket_model_path": "wise-snow-946/model.onnx",
-    "bucket_config_path": "wise-snow-946/config.json",
+    "bucket_model_path": "revived-shape-949/model.onnx",
+    "bucket_config_path": "revived-shape-949/config.json",
     "target_station_id": "0240120",
     "target_parameter": "level"
   },

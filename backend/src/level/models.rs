@@ -39,7 +39,7 @@ pub struct Quantile {
 }
 
 impl From<(&f32, &f32)> for Quantile {
-    fn from((value, quantile): (&f32, &f32)) -> Self {
+    fn from((quantile, value): (&f32, &f32)) -> Self {
         Self {
             value: *value,
             quantile: *quantile,
