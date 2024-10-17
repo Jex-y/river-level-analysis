@@ -277,14 +277,25 @@ class BaseTimeSeriesModel(LightningModule):
         )
 
     def configure_optimizers(self):
+
         optimizer = torch.optim.AdamW(
             self.parameters(),
             lr=self.config.lr,
             # fused=True,
             weight_decay=self.config.weight_decay,
         )
-        return optimizer
 
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer,
+                'min',
+                patience = 5,
+        )
+
+        return [optimizer], [{
+            "scheduler": scheduler,
+            "interval": "epoch",
+            "monitor": "val_total_loss",
+        }]
 
 class MLPBlock(nn.Sequential):
     def __init__(
@@ -363,7 +374,6 @@ class TimeSeriesModel(BaseTimeSeriesModel):
             + [config.mlp_hidden_size] * config.num_mlp_blocks
             + [self.num_output_features]
         )
-
         is_last = [False] * config.num_mlp_blocks + [True]
 
         self.mlp_layers = nn.Sequential(
@@ -398,11 +408,19 @@ class TimeSeriesModel(BaseTimeSeriesModel):
                 [features_with_time, features_with_time_after_conv], dim=-1
             )
 
-        return self.mlp_layers(
-            torch.cat(
-                [features_with_time_after_conv.flatten(1), features_without_time],
-                dim=-1,
+        batch_size = features_with_time.shape[0]
+        prediction_length = self.config.prediction_length
+
+        return (
+            self.mlp_layers(
+                torch.cat(
+                    [features_with_time_after_conv.flatten(1), features_without_time],
+                    dim=-1,
+                )
             )
+            .view(batch_size, prediction_length, -1)
+            .cumsum(dim=1)
         ) + self.last_observation_projection(
                 features_with_time[:,-1],
-        )
+        ).view(batch_size, prediction_length, -1)
+        # Cum sum along time axis so each is only difference from last

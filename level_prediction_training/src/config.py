@@ -28,13 +28,13 @@ class Config:
     lr: float = 0.001
     "Learning rate for the optimizer"
 
-    train_epochs: int = 100
+    train_epochs: int = 200
     "Number of epochs to train the model"
 
     batch_size: int = 1024
     "Batch size for training"
 
-    train_split: float = 0.8
+    train_split: float = 0.85
     "Fraction of data to use for training"
 
     thresholds: tuple[float, ...] = (0.675,)
@@ -47,7 +47,7 @@ class Config:
     target_col: str = "Durham New Elvet Bridge - level"
 
     context_length: int = 4 * 12
-    prediction_length: int = 4 * 12
+    prediction_length: int = 4 * 24
 
     activation_function: ActivationFunction = ActivationFunction.SWISH
 

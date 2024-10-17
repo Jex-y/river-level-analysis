@@ -113,7 +113,7 @@ class DataModule(LightningDataModule):
             batch_size=self.config.batch_size,
             shuffle=False,
             pin_memory=True,
-            num_workers=8,
+            num_workers=4,
             persistent_workers=True,
         )
 

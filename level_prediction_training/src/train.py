@@ -17,6 +17,8 @@ from pytorch_lightning import (
     seed_everything,
 )
 
+from pytorch_lightning.callbacks import ModelCheckpoint
+
 import wandb
 
 from .config import Config
@@ -117,21 +119,36 @@ def train(config: Optional[Config] = None):
 
     seed_everything(seed)
 
-    log.info(f"wandb run: {wandb.run.get_url()}")
-
+    log.info(f"WANDB run: {wandb.run.get_url()}")
+    log.debug("Got here")
     data_module = DataModule(config)
+
+    log.debug("Initialising model")
 
     model = TimeSeriesModel(
         input_column_names=data_module.x_column_names, config=config
     )
 
+    log.debug("Initialising checkpoint callback")
+
+    checkpoint_callback = ModelCheckpoint("./checkpoints", monitor="val_total_loss")
+
+    log.debug("Initialising trainer")
+
     trainer = Trainer(
         max_epochs=config.train_epochs,
         logger=loggers.WandbLogger(),
+        callbacks=[checkpoint_callback],
         fast_dev_run=config.dev_run,
     )
 
+    log.info("Starting training")
+
     trainer.fit(model, data_module)
+
+    log.info("Restoring best checkpoint")
+
+    model = TimeSeriesModel.load_from_checkpoint(checkpoint_callback.best_model_path, input_column_names=data_module.x_column_names, config=config)
 
     save_model(model, data_module.stations, config)
 
