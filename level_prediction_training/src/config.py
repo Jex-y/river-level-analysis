@@ -37,6 +37,8 @@ class Config:
     train_split: float = 0.85
     "Fraction of data to use for training"
 
+    sample_variance_loss_coef: float = 1.0
+
     thresholds: tuple[float, ...] = (0.675,)
     "Thresholds to predict over/under probability"
 

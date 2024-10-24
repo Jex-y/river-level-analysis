@@ -236,6 +236,9 @@ class BaseTimeSeriesModel(LightningModule):
 
         total_loss = mse_loss + quantile_loss + threshold_loss
 
+        sample_variance = y_true.var(dim=1)
+        total_loss *= 1 + (self.config.sample_variance_loss_coef * sample_variance)
+
         if not return_metrics:
             return total_loss
 
