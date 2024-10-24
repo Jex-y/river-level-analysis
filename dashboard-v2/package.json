@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NEXT_PUBLIC_API_HOST=http://localhost:8080 next dev --turbo",
+    "dev": "next dev --turbo",
+    "dev:local": "NEXT_PUBLIC_API_HOST=http://localhost:8080 next dev --turbo",
     "build": "next build",
     "lint": "biome lint ./src",
     "lint:fix": "biome lint --write ./src",

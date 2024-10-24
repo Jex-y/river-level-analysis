@@ -14,20 +14,40 @@ export const displayOrder: (keyof Parameters)[] = [
         'riverLevel',
 ];
 
+const format = (
+        value: number,
+        fractionDigits: number,
+        targetLength: number
+) => {
+        const negative = value < 0;
+        let valueString = Math.abs(value).toFixed(fractionDigits);
+        const length = valueString.length + (negative ? 1 : 0);
+
+        if (length < targetLength) {
+                valueString = ' '.repeat(targetLength - length) + valueString;
+        }
+
+        return `${negative ? '-' : ''}${valueString}`;
+};
+
 type ValueWithUnitsProps = {
         value?: number;
         fractionDigits?: number;
         unit?: string;
+        targetLength?: number;
 };
 
 function ValueWithUnits({
         value,
         fractionDigits = 1,
+        targetLength = 4,
         unit,
 }: ValueWithUnitsProps) {
         return (
                 <div className="ml-auto flex justify-between items-baseline gap-1.5 font-mono font-medium tabular-nums text-foreground">
-                        {value !== undefined ? value?.toFixed(fractionDigits) : '????'}
+                        {value !== undefined
+                                ? format(value, fractionDigits, targetLength)
+                                : '????'}
                         <span className="font-normal text-muted-foreground">{unit}</span>
                 </div>
         );

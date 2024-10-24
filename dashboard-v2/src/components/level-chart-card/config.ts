@@ -14,7 +14,7 @@ export const chartConfig = {
                 color: 'hsl(var(--chart-2))',
         },
         std: {
-                label: '1 Std Dev',
+                label: '80% Interval',
                 color: 'hsl(var(--chart-2))',
         },
 } satisfies ChartConfig;
@@ -22,6 +22,10 @@ export const chartConfig = {
 export const referenceLines = [
         {
                 label: 'DCR Limit',
-                value: 0.65,
+                value: 0.675,
+        },
+        {
+                label: 'Landing Stage',
+                value: 0.4,
         },
 ];

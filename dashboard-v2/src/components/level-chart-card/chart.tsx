@@ -1,8 +1,7 @@
 'use client';
-
-import type { RiverLevel } from '@/types';
+import { useEffect, useState } from 'react';
+import type { ObservedRiverLevel, ForecastRiverLevel } from '@/types';
 import * as config from './config';
-
 import {
         ChartContainer,
         ChartTooltip,
@@ -17,15 +16,68 @@ import {
         XAxis,
         YAxis,
 } from 'recharts';
+import { useObservedRiverLevel, useForecastRiverLevel } from '@/hooks';
+
 
 const useWithNumberTimestamp = (data: RiverLevel[]) => {
         return data.map((d) => ({
                 ...d,
+                ...(d.? quantiles && {
+                        '80%_CI': [d.quantiles[0].value, d.quantiles[3].value],
+                }),
                 timestamp: new Date(d.timestamp).getTime(),
         }));
 };
 
-export function LevelChart({ data }: { data: RiverLevel[] }) {
+type ChartObservedLevel = {
+        timestamp: number;
+        value: number;
+};
+
+type ChartForecastLevel = {
+        timestamp: number,
+        expected: number,
+        "80%_CI": [number, number],
+};
+
+const transformForecastData = (data: ForecastRiverLevel): ChartForecastLevel => ({
+        timestamp: new Date(data.timestamp).getTime(),
+        expected: data.mean,
+        "80%_CI": [data.quantiles[0].value, data.quantiles[3].value],
+});
+
+const transformObservedData = (data: ObservedRiverLevel): ChartObservedLevel => ({
+        timestamp: new Date(data.timestamp).getTime(),
+        value: data.value,
+});
+
+type ChartData = {
+        forecastData?: ChartForecastLevel[];
+        observedData?: ChartObservedLevel[];
+        error: unknown;
+};
+
+const useLevelChartData = () => {
+        const { data: forecastData, error: forecastError } = useForecastRiverLevel();
+        const { data: observedData, error: observedError } = useObservedRiverLevel();
+        const [chartData, setChartData] = useState<ChartData>();
+
+        const transformedForecastData = forecastData?.map((d) => ({
+                ...d,
+                mean: d.quantiles[1].value,
+        }));
+
+        const transformedObservedData = observedData?.map((d) => ({
+                ...d,
+                timestamp: new Date(d.timestamp).getTime(),
+        });
+
+
+        return chartData;
+
+}
+
+export function LevelChart({ observed, forecast }: { observed: ObservedRiverLevel, forecast: ForecastRiverLevel }) {
         const dataWithNumberTimestamp = useWithNumberTimestamp(data);
         // const now = new Date().getTime();
 
@@ -73,7 +125,7 @@ export function LevelChart({ data }: { data: RiverLevel[] }) {
                                                 y={value}
                                                 // stroke="var(--color-reference)"
                                                 // strokeDasharray="5 5"
-                                                label={{ value: label, position: 'left' }}
+                                                label={{ value: label, position: 'insideBottomLeft' }}
                                         />
                                 ))}
                                 <ChartTooltip
@@ -152,13 +204,13 @@ export function LevelChart({ data }: { data: RiverLevel[] }) {
                                         stroke="var(--color-mean)"
                                         strokeDasharray="5 5"
                                 />
-                                {/* <Area
-              dataKey="std"
-              type="natural"
-              fill="url(#fillStd)"
-              stroke="var(--color-std)"
-              strokeDasharray={10}
-            /> */}
+                                <Area
+                                        dataKey="80%_CI"
+                                        type="natural"
+                                        fill="url(#fill80)"
+                                        stroke="var(--color-80)"
+                                        strokeDasharray={10}
+                                />
                         </AreaChart>
                 </ChartContainer>
         );
